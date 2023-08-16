@@ -74,8 +74,8 @@ Now you can query for similar items:
 await vec.search([1.0, 9.0])
 ```
 
-    [<Record id=UUID('ae68bcbf-52e7-4977-b4b9-d2c954c3b8b4') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>,
-     <Record id=UUID('a76f2c30-f001-4e1a-abed-a2a0ce6aa8fe') metadata='{"animal": "fox"}' contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) ?column?=0.14489260377438218>]
+    [<Record id=UUID('393ef5c7-1587-468e-870c-b9a6a6716321') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
+     <Record id=UUID('7bec0df8-463f-4ea9-8d50-197906f9237e') metadata='{"animal": "fox"}' contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
 
 You can specify the number of records to return.
 
@@ -83,7 +83,7 @@ You can specify the number of records to return.
 await vec.search([1.0, 9.0], k=1)
 ```
 
-    [<Record id=UUID('ae68bcbf-52e7-4977-b4b9-d2c954c3b8b4') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>]
+    [<Record id=UUID('393ef5c7-1587-468e-870c-b9a6a6716321') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 You can also specify a filter on the metadata as a simple dictionary
 
@@ -91,7 +91,7 @@ You can also specify a filter on the metadata as a simple dictionary
 await vec.search([1.0, 9.0], k=1, filter={"action": "jump"})
 ```
 
-    [<Record id=UUID('ae68bcbf-52e7-4977-b4b9-d2c954c3b8b4') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>]
+    [<Record id=UUID('393ef5c7-1587-468e-870c-b9a6a6716321') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 ## Advanced Usage
 

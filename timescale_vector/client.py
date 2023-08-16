@@ -156,7 +156,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             params = params + [json_object]
         query = '''
         SELECT
-            id, metadata, contents, embedding, {distance}
+            id, metadata, contents, embedding, {distance} as distance
         FROM
            {table_name}
         WHERE 
