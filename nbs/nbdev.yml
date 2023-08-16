@@ -2,7 +2,7 @@ project:
   output-dir: _docs
 
 website:
-  title: "python-vector"
+  title: "timescale-vector"
   site-url: "https://timescale.github.io/python-vector"
   description: "Python library for storing vector data in Postgres"
   repo-branch: main
