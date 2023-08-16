@@ -11,7 +11,7 @@ documentation.
 pip install timescale_vector
 ```
 
-## How to use
+## Basic Usage
 
 Load up your postgres credentials. Safest way is with a .env file:
 
@@ -27,8 +27,16 @@ connection_string  = os.environ['PG_CONNECTION_STRING']
 
 Next, create the client.
 
-This takes three arguments: - A connection string - The name of the
-collection - Number of dimensions
+This takes three arguments:
+
+- A connection string
+
+- The name of the collection
+
+- Number of dimensions
+
+  In this tutorial, we will use the async client. But we have a sync
+  client as well (with an almost identical interface)
 
 ``` python
 vec  = client.Async(connection_string, "my_data", 2)
@@ -40,9 +48,12 @@ Next, create the tables for the collection:
 await vec.create_tables()
 ```
 
-Next, insert some data. The data record contains: - A uuid to uniquely
-identify the emedding - A json blob of metadata about the embedding -
-The text the embedding represents - The embedding itself
+Next, insert some data. The data record contains:
+
+- A uuid to uniquely identify the emedding
+- A json blob of metadata about the embedding
+- The text the embedding represents
+- The embedding itself
 
 Because this data already includes uuids we only allow upserts
 
@@ -63,8 +74,8 @@ Now you can query for similar items:
 await vec.search([1.0, 9.0])
 ```
 
-    [<Record id=UUID('25df4eea-a17f-42c2-9426-d09b8ca40e32') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>,
-     <Record id=UUID('605e3ff5-3503-4006-826f-c84ecbb535d4') metadata='{"animal": "fox"}' contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) ?column?=0.14489260377438218>]
+    [<Record id=UUID('ae68bcbf-52e7-4977-b4b9-d2c954c3b8b4') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>,
+     <Record id=UUID('a76f2c30-f001-4e1a-abed-a2a0ce6aa8fe') metadata='{"animal": "fox"}' contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) ?column?=0.14489260377438218>]
 
 You can specify the number of records to return.
 
@@ -72,7 +83,7 @@ You can specify the number of records to return.
 await vec.search([1.0, 9.0], k=1)
 ```
 
-    [<Record id=UUID('25df4eea-a17f-42c2-9426-d09b8ca40e32') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>]
+    [<Record id=UUID('ae68bcbf-52e7-4977-b4b9-d2c954c3b8b4') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>]
 
 You can also specify a filter on the metadata as a simple dictionary
 
@@ -80,4 +91,34 @@ You can also specify a filter on the metadata as a simple dictionary
 await vec.search([1.0, 9.0], k=1, filter={"action": "jump"})
 ```
 
-    [<Record id=UUID('25df4eea-a17f-42c2-9426-d09b8ca40e32') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>]
+    [<Record id=UUID('ae68bcbf-52e7-4977-b4b9-d2c954c3b8b4') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) ?column?=0.00016793422934946456>]
+
+## Advanced Usage
+
+### Indexing
+
+Indexing speeds up queries over your data.
+
+By default, we setup indexes to query your data by the uuid and the
+metadata.
+
+If you have many rows, you also need to setup an index on the embedding.
+You can create an ivfflat index with the following command after the
+table has been populated.
+
+``` python
+await vec.create_ivfflat_index()
+```
+
+Please note it is very important to do this only after you have data in
+the table.
+
+You can drop the index with the following command.
+
+``` python
+await vec.drop_embedding_index()
+```
+
+Please note the community is actively working on new indexing methods
+for embeddings. As they become available, we will add them to our client
+as well.
