@@ -1,4 +1,4 @@
 python-dotenv
 asyncpg
-psycopg
+psycopg2
 pgvector
