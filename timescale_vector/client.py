@@ -5,7 +5,6 @@ __all__ = ['QueryBuilder', 'Async', 'Sync']
 
 # %% ../nbs/00_vector.ipynb 6
 import asyncpg
-import psycopg.sql
 import uuid
 from pgvector.asyncpg import register_vector
 from typing import (List, Optional)
