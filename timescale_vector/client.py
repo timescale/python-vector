@@ -212,6 +212,12 @@ class Async(QueryBuilder):
             rec = await pool.fetchrow(query)
             return rec == None
 
+    def _convert_record_meta_to_json(item):
+        if not isinstance(item[1], dict):
+            raise ValueError("Cannot mix dictionary and string metadata fields in the same upsert")
+        return (item[0], json.dumps(item[1]), item[2], item[3])
+
+
     async def upsert(self, records):
         """
         Performs upsert operation for multiple records.
@@ -222,6 +228,8 @@ class Async(QueryBuilder):
         Returns:
             None
         """
+        if isinstance(records[0][1], dict):
+            records = list(map(lambda item: Async._convert_record_meta_to_json(item), records))
         query = self.builder.get_upsert_query()
         async with await self.connect() as pool:
             await pool.executemany(query, records)
@@ -379,6 +387,11 @@ class Sync:
                 rec = cur.fetchone()
                 return rec == None
 
+    def _convert_record_meta_to_json(item):
+        if not isinstance(item[1], dict):
+            raise ValueError("Cannot mix dictionary and string metadata fields in the same upsert")
+        return (item[0], json.dumps(item[1]), item[2], item[3])
+    
     def upsert(self, records):
         """
         Performs upsert operation for multiple records.
@@ -389,6 +402,9 @@ class Sync:
         Returns:
             None
         """
+        if isinstance(records[0][1], dict):
+            records = list(map(lambda item: Async._convert_record_meta_to_json(item), records))
+                    
         query = self.builder.get_upsert_query()
         query, _ = self._translate_to_pyformat(query, None)
         with self.connect() as conn:

@@ -39,6 +39,10 @@ This takes three arguments:
   client as well (with an almost identical interface)
 
 ``` python
+from timescale_vector import client
+```
+
+``` python
 vec  = client.Async(connection_string, "my_data", 2)
 ```
 
