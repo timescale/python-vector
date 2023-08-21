@@ -112,6 +112,9 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
     def delete_all_query(self):
         return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
+
+    def drop_table_query(self):
+        return "DROP TABLE IF EXISTS {table_name};".format(table_name=self._quote_ident(self.table_name))
        
     def create_ivfflat_index_query(self, num_records):
         """
@@ -274,6 +277,17 @@ class Async(QueryBuilder):
         if drop_index:
             await self.drop_embedding_index();
         query = self.builder.delete_all_query()
+        async with await self.connect() as pool:
+            await pool.execute(query)
+    
+    async def drop_table(self):
+        """
+        Drops the table
+
+        Returns:
+            None
+        """
+        query = self.builder.drop_table_query()
         async with await self.connect() as pool:
             await pool.execute(query)
 
@@ -465,6 +479,18 @@ class Sync:
         if drop_index:
             self.drop_embedding_index();
         query = self.builder.delete_all_query()
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+
+    def drop_table(self):
+        """
+        Drops the table
+
+        Returns:
+            None
+        """
+        query = self.builder.drop_table_query()
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
