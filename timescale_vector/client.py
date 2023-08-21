@@ -8,7 +8,7 @@ __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_
 import asyncpg
 import uuid
 from pgvector.asyncpg import register_vector
-from typing import (List, Optional)
+from typing import (List, Optional, Union, Dict, Tuple)
 import json 
 
 # %% ../nbs/00_vector.ipynb 7
@@ -144,7 +144,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         return "CREATE INDEX {index_name} ON {table_name} USING ivfflat ({column_name} {index_method}) WITH (lists = {num_lists});"\
         .format(index_name=self._get_embedding_index_name(), table_name=self._quote_ident(self.table_name), column_name=self._quote_ident(column_name), index_method=index_method, num_lists=num_lists)
 
-    def search_query(self, query_embedding: List[float], k: int=10, filter: Optional[dict] = None):
+    def search_query(self, query_embedding: List[float], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
@@ -159,12 +159,20 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         params = []
         distance = "embedding {op} ${index}".format(op=self.distance_type, index=len(params)+1)
         params = params + [query_embedding]
-        
-        where = "TRUE"
-        if filter != None:
+
+        if isinstance(filter, dict):
             where = "metadata @> ${index}".format(index=len(params)+1)
             json_object = json.dumps(filter)
             params = params + [json_object]
+        elif isinstance(filter, list):
+            any_params = []
+            for idx, filter_dict in enumerate(filter, start=len(params) + 1):
+                any_params.append(json.dumps(filter_dict))
+            where = "metadata @> ANY(${index}::jsonb[])".format(index=len(params) + 1)
+            params = params + [any_params]
+        else:
+            where = "TRUE"
+        
         query = '''
         SELECT
             id, metadata, contents, embedding, {distance} as distance
@@ -311,7 +319,7 @@ class Async(QueryBuilder):
     async def search(self, 
                      query_embedding: List[float], # vector to search for
                      k: int=10, # The number of nearest neighbors to retrieve. Default is 10.
-                     filter: Optional[dict] = None): # A filter for metadata. Default is None.
+                     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None): # A filter for metadata. Default is None.
         """
         Retrieves similar records using a similarity query.
 
@@ -504,7 +512,7 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
 
-    def search(self, query_embedding: List[float], k: int=10, filter: Optional[dict] = None):
+    def search(self, query_embedding: List[float], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
         """
         Retrieves similar records using a similarity query.
 
