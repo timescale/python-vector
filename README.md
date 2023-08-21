@@ -22,7 +22,7 @@ import os
 
 ``` python
 _ = load_dotenv(find_dotenv()) 
-connection_string  = os.environ['PG_CONNECTION_STRING']
+service_url  = os.environ['TIMESCALE_SERVICE_URL']
 ```
 
 Next, create the client.
@@ -43,7 +43,7 @@ from timescale_vector import client
 ```
 
 ``` python
-vec  = client.Async(connection_string, "my_data", 2)
+vec  = client.Async(service_url, "my_data", 2)
 ```
 
 Next, create the tables for the collection:

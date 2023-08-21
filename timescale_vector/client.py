@@ -189,7 +189,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 class Async(QueryBuilder):
     def __init__(
         self,
-        connection_string: str,
+        service_url: str,
         table_name: str,
         num_dimensions: int,
         distance_type: str = 'cosine') -> None:
@@ -197,13 +197,13 @@ class Async(QueryBuilder):
             Initializes a async client for storing vector data.
     
             Args:
-                connection_string (str): The connection string for the database.
+                service_url (str): The connection string for the database.
                 table_name (str): The name of the table.
                 num_dimensions (int): The number of dimensions for the embedding vector.
                 distance_type (str, optional): The distance type for indexing. Default is 'cosine' or '<=>'.
             """
             self.builder = QueryBuilder(table_name,num_dimensions, distance_type)
-            self.connection_string = connection_string
+            self.service_url = service_url
             self.pool = None
             
     async def connect(self):
@@ -216,7 +216,7 @@ class Async(QueryBuilder):
         if self.pool == None:
             async def init(conn):
                 await register_vector(conn)
-            self.pool = await asyncpg.create_pool(dsn=self.connection_string, init=init)
+            self.pool = await asyncpg.create_pool(dsn=self.service_url, init=init)
         return self.pool.acquire()
 
     async def table_is_empty(self):
@@ -344,12 +344,12 @@ class Sync:
     
     def __init__(
         self,
-        connection_string: str,
+        service_url: str,
         table_name: str,
         num_dimensions: int,
         distance_type: str = 'cosine') -> None:
             self.builder = QueryBuilder(table_name,num_dimensions, distance_type)
-            self.connection_string = connection_string
+            self.service_url = service_url
             self.pool = None
             psycopg2.extras.register_uuid()
 
@@ -361,7 +361,7 @@ class Sync:
         use in a context manager.
         """
         if self.pool == None:
-            self.pool = psycopg2.pool.SimpleConnectionPool(1, 10, dsn=self.connection_string)
+            self.pool = psycopg2.pool.SimpleConnectionPool(1, 10, dsn=self.service_url)
         
         connection = self.pool.getconn()
         pgvector.psycopg2.register_vector(connection)
