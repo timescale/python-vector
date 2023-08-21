@@ -78,8 +78,8 @@ Now you can query for similar items:
 await vec.search([1.0, 9.0])
 ```
 
-    [<Record id=UUID('393ef5c7-1587-468e-870c-b9a6a6716321') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
-     <Record id=UUID('7bec0df8-463f-4ea9-8d50-197906f9237e') metadata='{"animal": "fox"}' contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
+    [<Record id=UUID('0c2aceca-9375-4c04-b5b4-01db19eea3c8') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
+     <Record id=UUID('4954646e-2677-49c3-91e8-fdc38b8eee75') metadata='{"animal": "fox"}' contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
 
 You can specify the number of records to return.
 
@@ -87,7 +87,7 @@ You can specify the number of records to return.
 await vec.search([1.0, 9.0], k=1)
 ```
 
-    [<Record id=UUID('393ef5c7-1587-468e-870c-b9a6a6716321') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+    [<Record id=UUID('0c2aceca-9375-4c04-b5b4-01db19eea3c8') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 You can also specify a filter on the metadata as a simple dictionary
 
@@ -95,7 +95,40 @@ You can also specify a filter on the metadata as a simple dictionary
 await vec.search([1.0, 9.0], k=1, filter={"action": "jump"})
 ```
 
-    [<Record id=UUID('393ef5c7-1587-468e-870c-b9a6a6716321') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+    [<Record id=UUID('0c2aceca-9375-4c04-b5b4-01db19eea3c8') metadata='{"action": "jump", "animal": "fox"}' contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+
+You can access the fields as follows
+
+``` python
+records = await vec.search([1.0, 9.0], k=1, filter={"action": "jump"})
+records[0][client.SEARCH_RESULT_ID_IDX]
+```
+
+    UUID('0c2aceca-9375-4c04-b5b4-01db19eea3c8')
+
+``` python
+records[0][client.SEARCH_RESULT_METADATA_IDX]
+```
+
+    '{"action": "jump", "animal": "fox"}'
+
+``` python
+records[0][client.SEARCH_RESULT_CONTENTS_IDX]
+```
+
+    'jumped over the'
+
+``` python
+records[0][client.SEARCH_RESULT_EMBEDDING_IDX]
+```
+
+    array([ 1. , 10.8], dtype=float32)
+
+``` python
+records[0][client.SEARCH_RESULT_DISTANCE_IDX]
+```
+
+    0.00016793422934946456
 
 ## Advanced Usage
 
