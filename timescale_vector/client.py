@@ -109,7 +109,10 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
     
     def drop_embedding_index_query(self):
         return "DROP INDEX IF EXISTS {index_name};".format(index_name=self._get_embedding_index_name())
-    
+
+    def delete_all_query(self):
+        return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
+       
     def create_ivfflat_index_query(self, num_records):
         """
         Generates an ivfflat index creation query.
@@ -250,6 +253,19 @@ class Async(QueryBuilder):
             None
         """
         query = self.builder.get_create_query()
+        async with await self.connect() as pool:
+            await pool.execute(query)
+
+    async def delete_all(self, drop_index=True):
+        """
+        Deletes all data. Also drops the index if `drop_index` is true.
+
+        Returns:
+            None
+        """
+        if drop_index:
+            await self.drop_embedding_index();
+        query = self.builder.delete_all_query()
         async with await self.connect() as pool:
             await pool.execute(query)
 
@@ -427,6 +443,20 @@ class Sync:
             None
         """
         query = self.builder.get_create_query()
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+
+    def delete_all(self, drop_index=True):
+        """
+        Deletes all data. Also drops the index if `drop_index` is true.
+
+        Returns:
+            None
+        """
+        if drop_index:
+            self.drop_embedding_index();
+        query = self.builder.delete_all_query()
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
