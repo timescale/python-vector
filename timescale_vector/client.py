@@ -112,8 +112,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
     def delete_all_query(self):
         return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
 
-    def delete_by_id_query(self, id: uuid.UUID) ->  Tuple[str, List]:
-       query = "DELETE FROM {table_name} WHERE id = $1;".format(table_name=self._quote_ident(self.table_name))
+    def delete_by_ids_query(self, id: List[uuid.UUID]) ->  Tuple[str, List]:
+       query = "DELETE FROM {table_name} WHERE id = ANY($1);".format(table_name=self._quote_ident(self.table_name))
        return (query, [id])
 
     def delete_by_metadata_query (self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
@@ -301,11 +301,11 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def delete_by_id(self, id: uuid.UUID):
+    async def delete_by_ids(self, id: List[uuid.UUID]):
         """
         Delete records by id.
         """
-        (query, params) = self.builder.delete_by_id_query(id)
+        (query, params) = self.builder.delete_by_ids_query(id)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
@@ -521,11 +521,11 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
     
-    def delete_by_id(self, id: uuid.UUID):
+    def delete_by_ids(self, id: List[uuid.UUID]):
         """
         Delete records by id.
         """
-        (query, params) = self.builder.delete_by_id_query(id)
+        (query, params) = self.builder.delete_by_ids_query(id)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:

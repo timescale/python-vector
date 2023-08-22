@@ -143,7 +143,7 @@ records[0][client.SEARCH_RESULT_DISTANCE_IDX]
 You can delete by ID:
 
 ``` python
-await vec.delete_by_id(records[0][client.SEARCH_RESULT_ID_IDX])
+await vec.delete_by_ids([records[0][client.SEARCH_RESULT_ID_IDX]])
 ```
 
     []
