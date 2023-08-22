@@ -219,6 +219,13 @@ class Async(QueryBuilder):
         if self.pool == None:
             async def init(conn):
                 await register_vector(conn)
+                #decode to a dict, but accept a string as input in upsert
+                await conn.set_type_codec(
+                    'jsonb',
+                    encoder=str,
+                    decoder=json.loads,
+                    schema='pg_catalog')
+
             self.pool = await asyncpg.create_pool(dsn=self.service_url, init=init)
         return self.pool.acquire()
 
