@@ -113,7 +113,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
 
     def delete_by_ids_query(self, id: List[uuid.UUID]) ->  Tuple[str, List]:
-       query = "DELETE FROM {table_name} WHERE id = ANY($1);".format(table_name=self._quote_ident(self.table_name))
+       query = "DELETE FROM {table_name} WHERE id = ANY($1::uuid[]);".format(table_name=self._quote_ident(self.table_name))
        return (query, [id])
 
     def delete_by_metadata_query (self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
