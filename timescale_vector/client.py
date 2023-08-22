@@ -63,7 +63,6 @@ class QueryBuilder:
         """
         return "SELECT 1 FROM {table_name} LIMIT 1".format(table_name=self._quote_ident(self.table_name))
 
-    #| export
     def get_upsert_query(self):
         """
         Generates an upsert query.
@@ -113,6 +112,16 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
     def delete_all_query(self):
         return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
 
+    def delete_by_id_query(self, id: uuid.UUID) ->  Tuple[str, List]:
+       query = "DELETE FROM {table_name} WHERE id = $1;".format(table_name=self._quote_ident(self.table_name))
+       return (query, [id])
+
+    def delete_by_metadata_query (self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
+        params = []
+        (where, params) = self._where_clause_for_filter(params, filter)
+        query = "DELETE FROM {table_name} WHERE {where};".format(table_name=self._quote_ident(self.table_name), where=where)
+        return (query, params) 
+
     def drop_table_query(self):
         return "DROP TABLE IF EXISTS {table_name};".format(table_name=self._quote_ident(self.table_name))
        
@@ -147,6 +156,22 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         return "CREATE INDEX {index_name} ON {table_name} USING ivfflat ({column_name} {index_method}) WITH (lists = {num_lists});"\
         .format(index_name=self._get_embedding_index_name(), table_name=self._quote_ident(self.table_name), column_name=self._quote_ident(column_name), index_method=index_method, num_lists=num_lists)
 
+    def _where_clause_for_filter(self, params: List, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]]) -> Tuple[str, List]:
+        if isinstance(filter, dict):
+            where = "metadata @> ${index}".format(index=len(params)+1)
+            json_object = json.dumps(filter)
+            params = params + [json_object]
+        elif isinstance(filter, list):
+            any_params = []
+            for idx, filter_dict in enumerate(filter, start=len(params) + 1):
+                any_params.append(json.dumps(filter_dict))
+            where = "metadata @> ANY(${index}::jsonb[])".format(index=len(params) + 1)
+            params = params + [any_params]
+        else:
+            where = "TRUE"
+
+        return (where, params) 
+
     def search_query(self, query_embedding: List[float], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
@@ -163,19 +188,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         distance = "embedding {op} ${index}".format(op=self.distance_type, index=len(params)+1)
         params = params + [query_embedding]
 
-        if isinstance(filter, dict):
-            where = "metadata @> ${index}".format(index=len(params)+1)
-            json_object = json.dumps(filter)
-            params = params + [json_object]
-        elif isinstance(filter, list):
-            any_params = []
-            for idx, filter_dict in enumerate(filter, start=len(params) + 1):
-                any_params.append(json.dumps(filter_dict))
-            where = "metadata @> ANY(${index}::jsonb[])".format(index=len(params) + 1)
-            params = params + [any_params]
-        else:
-            where = "TRUE"
-        
+        (where, params) = self._where_clause_for_filter(params, filter)
+
         query = '''
         SELECT
             id, metadata, contents, embedding, {distance} as distance
@@ -286,7 +300,24 @@ class Async(QueryBuilder):
         query = self.builder.delete_all_query()
         async with await self.connect() as pool:
             await pool.execute(query)
-    
+
+    async def delete_by_id(self, id: uuid.UUID):
+        """
+        Delete records by id.
+        """
+        (query, params) = self.builder.delete_by_id_query(id)
+        async with await self.connect() as pool:
+            return await pool.fetch(query, *params)
+
+    async def delete_by_metadata(self, filter: Union[Dict[str, str], List[Dict[str, str]]]):
+        """
+        Delete records by metadata filters.
+        """
+        (query, params) = self.builder.delete_by_metadata_query(filter)
+        async with await self.connect() as pool:
+            return await pool.fetch(query, *params)
+
+
     async def drop_table(self):
         """
         Drops the table
@@ -489,6 +520,26 @@ class Sync:
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
+    
+    def delete_by_id(self, id: uuid.UUID):
+        """
+        Delete records by id.
+        """
+        (query, params) = self.builder.delete_by_id_query(id)
+        query, params = self._translate_to_pyformat(query, params)
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+
+    def delete_by_metadata(self, filter: Union[Dict[str, str], List[Dict[str, str]]]):
+        """
+        Delete records by metadata filters.
+        """
+        (query, params) = self.builder.delete_by_metadata_query(filter)
+        query, params = self._translate_to_pyformat(query, params)
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
 
     def drop_table(self):
         """
