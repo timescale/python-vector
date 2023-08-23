@@ -84,7 +84,7 @@ await vec.search([1.0, 9.0])
 You can specify the number of records to return.
 
 ``` python
-await vec.search([1.0, 9.0], k=1)
+await vec.search([1.0, 9.0], limit=1)
 ```
 
     [<Record id=UUID('1bd6a985-a837-4742-a007-d8a785e7089f') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
@@ -92,7 +92,7 @@ await vec.search([1.0, 9.0], k=1)
 You can also specify a filter on the metadata as a simple dictionary
 
 ``` python
-await vec.search([1.0, 9.0], k=1, filter={"action": "jump"})
+await vec.search([1.0, 9.0], limit=1, filter={"action": "jump"})
 ```
 
     [<Record id=UUID('1bd6a985-a837-4742-a007-d8a785e7089f') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
@@ -101,7 +101,7 @@ You can also specify a list of filter dictionaries, where an item is
 returned if it matches any dict
 
 ``` python
-await vec.search([1.0, 9.0], k=2, filter=[{"action": "jump"}, {"animal": "fox"}])
+await vec.search([1.0, 9.0], limit=2, filter=[{"action": "jump"}, {"animal": "fox"}])
 ```
 
     [<Record id=UUID('1bd6a985-a837-4742-a007-d8a785e7089f') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
@@ -110,7 +110,7 @@ await vec.search([1.0, 9.0], k=2, filter=[{"action": "jump"}, {"animal": "fox"}]
 You can access the fields as follows
 
 ``` python
-records = await vec.search([1.0, 9.0], k=1, filter={"action": "jump"})
+records = await vec.search([1.0, 9.0], limit=1, filter={"action": "jump"})
 records[0][client.SEARCH_RESULT_ID_IDX]
 ```
 

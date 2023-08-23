@@ -172,7 +172,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
         return (where, params) 
 
-    def search_query(self, query_embedding: Optional[List[float]], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
+    def search_query(self, query_embedding: Optional[List[float]], limit: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
@@ -203,8 +203,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         WHERE 
            {where}
         {order_by_clause}
-        LIMIT {k}
-        '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), k=k)
+        LIMIT {limit}
+        '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), limit=limit)
         return (query, params)
 
 # %% ../nbs/00_vector.ipynb 11
@@ -375,7 +375,7 @@ class Async(QueryBuilder):
 
     async def search(self, 
                      query_embedding: Optional[List[float]] = None, # vector to search for
-                     k: int=10, # The number of nearest neighbors to retrieve. Default is 10.
+                     limit: int=10, # The number of nearest neighbors to retrieve. Default is 10.
                      filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None): # A filter for metadata. Default is None.
         """
         Retrieves similar records using a similarity query.
@@ -383,7 +383,7 @@ class Async(QueryBuilder):
         Returns:
             List: List of similar records.
         """
-        (query, params) = self.builder.search_query(query_embedding, k, filter)
+        (query, params) = self.builder.search_query(query_embedding, limit, filter)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
@@ -601,7 +601,7 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
 
-    def search(self, query_embedding: Optional[List[float]]=None, k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
+    def search(self, query_embedding: Optional[List[float]]=None, limit: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
         """
         Retrieves similar records using a similarity query.
 
@@ -616,7 +616,7 @@ class Sync:
         if query_embedding is not None:
             query_embedding = np.array(query_embedding)
             
-        (query, params) = self.builder.search_query(query_embedding, k, filter)
+        (query, params) = self.builder.search_query(query_embedding, limit, filter)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
