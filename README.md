@@ -191,3 +191,9 @@ await vec.drop_embedding_index()
 Please note the community is actively working on new indexing methods
 for embeddings. As they become available, we will add them to our client
 as well.
+
+## Development
+
+Please note that this project is developed with
+[nbdev](https://nbdev.fast.ai/). Please see that website for the
+development process.

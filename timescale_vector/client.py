@@ -172,12 +172,12 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
         return (where, params) 
 
-    def search_query(self, query_embedding: List[float], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
+    def search_query(self, query_embedding: Optional[List[float]], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
         Args:
-            query_embedding (List[float]): The query embedding vector.
+            query_embedding (Optiona[List[float]], optional): The query embedding vector.
             k (int, optional): The number of nearest neighbors to retrieve. Default is 10.
             filter (Optional[dict], optional): A filter for metadata. Default is None.
 
@@ -185,8 +185,13 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             Tuple[str, List]: A tuple containing the query and parameters.
         """
         params = []
-        distance = "embedding {op} ${index}".format(op=self.distance_type, index=len(params)+1)
-        params = params + [query_embedding]
+        if query_embedding is not None:
+            distance = "embedding {op} ${index}".format(op=self.distance_type, index=len(params)+1)
+            params = params + [query_embedding]
+            order_by_clause = "ORDER BY {distance} ASC".format(distance=distance)
+        else:
+            distance = "-1.0"
+            order_by_clause = ""
 
         (where, params) = self._where_clause_for_filter(params, filter)
 
@@ -197,9 +202,9 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
            {table_name}
         WHERE 
            {where}
-        ORDER BY {distance} ASC
+        {order_by_clause}
         LIMIT {k}
-        '''.format(distance=distance, where=where, table_name=self._quote_ident(self.table_name), k=k)
+        '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), k=k)
         return (query, params)
 
 # %% ../nbs/00_vector.ipynb 11
@@ -369,7 +374,7 @@ class Async(QueryBuilder):
             await pool.execute(query)
 
     async def search(self, 
-                     query_embedding: List[float], # vector to search for
+                     query_embedding: Optional[List[float]] = None, # vector to search for
                      k: int=10, # The number of nearest neighbors to retrieve. Default is 10.
                      filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None): # A filter for metadata. Default is None.
         """
@@ -596,7 +601,7 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
 
-    def search(self, query_embedding: List[float], k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
+    def search(self, query_embedding: Optional[List[float]]=None, k: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
         """
         Retrieves similar records using a similarity query.
 
@@ -608,7 +613,10 @@ class Sync:
         Returns:
             List: List of similar records.
         """
-        (query, params) = self.builder.search_query(np.array(query_embedding), k, filter)
+        if query_embedding is not None:
+            query_embedding = np.array(query_embedding)
+            
+        (query, params) = self.builder.search_query(query_embedding, k, filter)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
