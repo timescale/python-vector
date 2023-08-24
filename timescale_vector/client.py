@@ -248,6 +248,10 @@ class Async(QueryBuilder):
 
             self.pool = await asyncpg.create_pool(dsn=self.service_url, init=init)
         return self.pool.acquire()
+    
+    async def close(self):
+        if self.pool != None:
+            await self.pool.close()
 
     async def table_is_empty(self):
         """
@@ -428,6 +432,10 @@ class Sync:
             connection.commit()
         finally:            
             self.pool.putconn(connection)
+
+    def close(self):
+        if self.pool != None:
+            self.pool.closeall()
 
     def _translate_to_pyformat(self, query_string, params):
         """
