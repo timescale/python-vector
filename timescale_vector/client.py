@@ -8,8 +8,9 @@ __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_
 import asyncpg
 import uuid
 from pgvector.asyncpg import register_vector
-from typing import (List, Optional, Union, Dict, Tuple)
-import json 
+from typing import (List, Optional, Union, Dict, Tuple, Any)
+import json
+import numpy as np 
 
 # %% ../nbs/00_vector.ipynb 7
 SEARCH_RESULT_ID_IDX = 0
@@ -117,7 +118,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
        return (query, [id])
 
     def delete_by_metadata_query (self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
-        params = []
+        params: List[Any] = []
         (where, params) = self._where_clause_for_filter(params, filter)
         query = "DELETE FROM {table_name} WHERE {where};".format(table_name=self._quote_ident(self.table_name), where=where)
         return (query, params) 
@@ -172,7 +173,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
         return (where, params) 
 
-    def search_query(self, query_embedding: Optional[List[float]], limit: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
+    def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
@@ -184,7 +185,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         Returns:
             Tuple[str, List]: A tuple containing the query and parameters.
         """
-        params = []
+        params: List[Any] = []
         if query_embedding is not None:
             distance = "embedding {op} ${index}".format(op=self.distance_type, index=len(params)+1)
             params = params + [query_embedding]
@@ -397,7 +398,7 @@ import re
 
 # %% ../nbs/00_vector.ipynb 20
 class Sync:
-    translated_queries = {}
+    translated_queries: Dict[str, str] = {}
     
     def __init__(
         self,
@@ -614,9 +615,11 @@ class Sync:
             List: List of similar records.
         """
         if query_embedding is not None:
-            query_embedding = np.array(query_embedding)
+            query_embedding_np = np.array(query_embedding)
+        else:
+           query_embedding_np = None 
             
-        (query, params) = self.builder.search_query(query_embedding, limit, filter)
+        (query, params) = self.builder.search_query(query_embedding_np, limit, filter)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
