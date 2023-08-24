@@ -10,7 +10,7 @@ import uuid
 from pgvector.asyncpg import register_vector
 from typing import (List, Optional, Union, Dict, Tuple, Any)
 import json
-import numpy as np 
+import numpy as np
 
 # %% ../nbs/00_vector.ipynb 7
 SEARCH_RESULT_ID_IDX = 0
@@ -22,10 +22,10 @@ SEARCH_RESULT_DISTANCE_IDX = 4
 # %% ../nbs/00_vector.ipynb 8
 class QueryBuilder:
     def __init__(
-        self,
-        table_name: str,
-        num_dimensions: int,
-        distance_type: str = 'cosine') -> None:
+            self,
+            table_name: str,
+            num_dimensions: int,
+            distance_type: str = 'cosine') -> None:
         """
         Initializes a base Vector object to generate queries for vector clients.
 
@@ -80,7 +80,7 @@ class QueryBuilder:
         Returns:
             str: the query.
         """
-        #todo optimize with approx
+        # todo optimize with approx
         return "SELECT COUNT(*) as cnt FROM {table_name}".format(table_name=self._quote_ident(self.table_name))
 
     #| export
@@ -106,26 +106,28 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
     def _get_embedding_index_name(self):
         return self._quote_ident(self.table_name+"_embedding_idx")
-    
+
     def drop_embedding_index_query(self):
         return "DROP INDEX IF EXISTS {index_name};".format(index_name=self._get_embedding_index_name())
 
     def delete_all_query(self):
         return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
 
-    def delete_by_ids_query(self, id: List[uuid.UUID]) ->  Tuple[str, List]:
-       query = "DELETE FROM {table_name} WHERE id = ANY($1::uuid[]);".format(table_name=self._quote_ident(self.table_name))
-       return (query, [id])
+    def delete_by_ids_query(self, id: List[uuid.UUID]) -> Tuple[str, List]:
+        query = "DELETE FROM {table_name} WHERE id = ANY($1::uuid[]);".format(
+            table_name=self._quote_ident(self.table_name))
+        return (query, [id])
 
-    def delete_by_metadata_query (self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
+    def delete_by_metadata_query(self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
         params: List[Any] = []
         (where, params) = self._where_clause_for_filter(params, filter)
-        query = "DELETE FROM {table_name} WHERE {where};".format(table_name=self._quote_ident(self.table_name), where=where)
-        return (query, params) 
+        query = "DELETE FROM {table_name} WHERE {where};".format(
+            table_name=self._quote_ident(self.table_name), where=where)
+        return (query, params)
 
     def drop_table_query(self):
         return "DROP TABLE IF EXISTS {table_name};".format(table_name=self._quote_ident(self.table_name))
-       
+
     def create_ivfflat_index_query(self, num_records):
         """
         Generates an ivfflat index creation query.
@@ -136,7 +138,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         Returns:
             str: The index creation query.
         """
-        column_name = "embedding" 
+        column_name = "embedding"
 
         index_method = "invalid"
         if self.distance_type == "<->":
@@ -147,7 +149,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             index_method = "vector_cosine_ops"
         else:
             raise ValueError(f"unrecognized operator {query_operator}")
-        
+
         num_lists = num_records / 1000
         if num_lists < 10:
             num_lists = 10
@@ -155,7 +157,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             num_lists = math.sqrt(num_records)
 
         return "CREATE INDEX {index_name} ON {table_name} USING ivfflat ({column_name} {index_method}) WITH (lists = {num_lists});"\
-        .format(index_name=self._get_embedding_index_name(), table_name=self._quote_ident(self.table_name), column_name=self._quote_ident(column_name), index_method=index_method, num_lists=num_lists)
+            .format(index_name=self._get_embedding_index_name(), table_name=self._quote_ident(self.table_name), column_name=self._quote_ident(column_name), index_method=index_method, num_lists=num_lists)
 
     def _where_clause_for_filter(self, params: List, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]]) -> Tuple[str, List]:
         if isinstance(filter, dict):
@@ -166,14 +168,15 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             any_params = []
             for idx, filter_dict in enumerate(filter, start=len(params) + 1):
                 any_params.append(json.dumps(filter_dict))
-            where = "metadata @> ANY(${index}::jsonb[])".format(index=len(params) + 1)
+            where = "metadata @> ANY(${index}::jsonb[])".format(
+                index=len(params) + 1)
             params = params + [any_params]
         else:
             where = "TRUE"
 
-        return (where, params) 
+        return (where, params)
 
-    def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
+    def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
@@ -187,9 +190,11 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         """
         params: List[Any] = []
         if query_embedding is not None:
-            distance = "embedding {op} ${index}".format(op=self.distance_type, index=len(params)+1)
+            distance = "embedding {op} ${index}".format(
+                op=self.distance_type, index=len(params)+1)
             params = params + [query_embedding]
-            order_by_clause = "ORDER BY {distance} ASC".format(distance=distance)
+            order_by_clause = "ORDER BY {distance} ASC".format(
+                distance=distance)
         else:
             distance = "-1.0"
             order_by_clause = ""
@@ -211,24 +216,24 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 # %% ../nbs/00_vector.ipynb 11
 class Async(QueryBuilder):
     def __init__(
-        self,
-        service_url: str,
-        table_name: str,
-        num_dimensions: int,
-        distance_type: str = 'cosine') -> None:
-            """
-            Initializes a async client for storing vector data.
-    
-            Args:
-                service_url (str): The connection string for the database.
-                table_name (str): The name of the table.
-                num_dimensions (int): The number of dimensions for the embedding vector.
-                distance_type (str, optional): The distance type for indexing. Default is 'cosine' or '<=>'.
-            """
-            self.builder = QueryBuilder(table_name,num_dimensions, distance_type)
-            self.service_url = service_url
-            self.pool = None
-            
+            self,
+            service_url: str,
+            table_name: str,
+            num_dimensions: int,
+            distance_type: str = 'cosine') -> None:
+        """
+        Initializes a async client for storing vector data.
+
+        Args:
+            service_url (str): The connection string for the database.
+            table_name (str): The name of the table.
+            num_dimensions (int): The number of dimensions for the embedding vector.
+            distance_type (str, optional): The distance type for indexing. Default is 'cosine' or '<=>'.
+        """
+        self.builder = QueryBuilder(table_name, num_dimensions, distance_type)
+        self.service_url = service_url
+        self.pool = None
+
     async def connect(self):
         """
         Establishes a connection to a PostgreSQL database using asyncpg.
@@ -239,7 +244,7 @@ class Async(QueryBuilder):
         if self.pool == None:
             async def init(conn):
                 await register_vector(conn)
-                #decode to a dict, but accept a string as input in upsert
+                # decode to a dict, but accept a string as input in upsert
                 await conn.set_type_codec(
                     'jsonb',
                     encoder=str,
@@ -248,7 +253,7 @@ class Async(QueryBuilder):
 
             self.pool = await asyncpg.create_pool(dsn=self.service_url, init=init)
         return self.pool.acquire()
-    
+
     async def close(self):
         if self.pool != None:
             await self.pool.close()
@@ -267,9 +272,9 @@ class Async(QueryBuilder):
 
     def _convert_record_meta_to_json(item):
         if not isinstance(item[1], dict):
-            raise ValueError("Cannot mix dictionary and string metadata fields in the same upsert")
+            raise ValueError(
+                "Cannot mix dictionary and string metadata fields in the same upsert")
         return (item[0], json.dumps(item[1]), item[2], item[3])
-
 
     async def upsert(self, records):
         """
@@ -282,7 +287,8 @@ class Async(QueryBuilder):
             None
         """
         if isinstance(records[0][1], dict):
-            records = list(map(lambda item: Async._convert_record_meta_to_json(item), records))
+            records = list(
+                map(lambda item: Async._convert_record_meta_to_json(item), records))
         query = self.builder.get_upsert_query()
         async with await self.connect() as pool:
             await pool.executemany(query, records)
@@ -306,7 +312,7 @@ class Async(QueryBuilder):
             None
         """
         if drop_index:
-            await self.drop_embedding_index();
+            await self.drop_embedding_index()
         query = self.builder.delete_all_query()
         async with await self.connect() as pool:
             await pool.execute(query)
@@ -326,7 +332,6 @@ class Async(QueryBuilder):
         (query, params) = self.builder.delete_by_metadata_query(filter)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
-
 
     async def drop_table(self):
         """
@@ -361,7 +366,7 @@ class Async(QueryBuilder):
         query = self.builder.drop_embedding_index_query()
         async with await self.connect() as pool:
             await pool.execute(query)
-    
+
     async def create_ivfflat_index(self, num_records=None):
         """
         Creates an ivfflat index for the table.
@@ -378,17 +383,20 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def search(self, 
-                     query_embedding: Optional[List[float]] = None, # vector to search for
-                     limit: int=10, # The number of nearest neighbors to retrieve. Default is 10.
-                     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None): # A filter for metadata. Default is None.
+    async def search(self,
+                     # vector to search for
+                     query_embedding: Optional[List[float]] = None,
+                     # The number of nearest neighbors to retrieve. Default is 10.
+                     limit: int = 10,
+                     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):  # A filter for metadata. Default is None.
         """
         Retrieves similar records using a similarity query.
 
         Returns:
             List: List of similar records.
         """
-        (query, params) = self.builder.search_query(query_embedding, limit, filter)
+        (query, params) = self.builder.search_query(
+            query_embedding, limit, filter)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
@@ -403,19 +411,18 @@ import re
 # %% ../nbs/00_vector.ipynb 20
 class Sync:
     translated_queries: Dict[str, str] = {}
-    
-    def __init__(
-        self,
-        service_url: str,
-        table_name: str,
-        num_dimensions: int,
-        distance_type: str = 'cosine') -> None:
-            self.builder = QueryBuilder(table_name,num_dimensions, distance_type)
-            self.service_url = service_url
-            self.pool = None
-            psycopg2.extras.register_uuid()
 
-    
+    def __init__(
+            self,
+            service_url: str,
+            table_name: str,
+            num_dimensions: int,
+            distance_type: str = 'cosine') -> None:
+        self.builder = QueryBuilder(table_name, num_dimensions, distance_type)
+        self.service_url = service_url
+        self.pool = None
+        psycopg2.extras.register_uuid()
+
     @contextmanager
     def connect(self):
         """
@@ -423,14 +430,15 @@ class Sync:
         use in a context manager.
         """
         if self.pool == None:
-            self.pool = psycopg2.pool.SimpleConnectionPool(1, 10, dsn=self.service_url)
-        
+            self.pool = psycopg2.pool.SimpleConnectionPool(
+                1, 10, dsn=self.service_url)
+
         connection = self.pool.getconn()
         pgvector.psycopg2.register_vector(connection)
         try:
             yield connection
             connection.commit()
-        finally:            
+        finally:
             self.pool.putconn(connection)
 
     def close(self):
@@ -444,12 +452,12 @@ class Sync:
         Args:
             query_string (str): The query string with parameters.
             params (list): List of parameter values.
-    
+
         Returns:
             str: The query string with translated pyformat parameters.
             dict: A dictionary mapping parameter numbers to their values.
         """
-        
+
         translated_params = {}
         if params != None:
             for idx, param in enumerate(params):
@@ -458,19 +466,21 @@ class Sync:
         if query_string in self.translated_queries:
             return self.translated_queries[query_string], translated_params
 
-        dollar_params = re.findall(r'\$[0-9]+', query_string) 
-        translated_string = query_string 
+        dollar_params = re.findall(r'\$[0-9]+', query_string)
+        translated_string = query_string
         for dollar_param in dollar_params:
-            param_number = int(dollar_param[1:])  # Extract the number after the $
+            # Extract the number after the $
+            param_number = int(dollar_param[1:])
             if params != None:
                 pyformat_param = '%s' if param_number == 0 else f'%({param_number})s'
             else:
                 pyformat_param = '%s'
-            translated_string = translated_string.replace(dollar_param, pyformat_param)
+            translated_string = translated_string.replace(
+                dollar_param, pyformat_param)
 
-        self.translated_queries[query_string] = translated_string 
+        self.translated_queries[query_string] = translated_string
         return self.translated_queries[query_string], translated_params
-        
+
     def table_is_empty(self):
         """
         Checks if the table is empty.
@@ -487,9 +497,10 @@ class Sync:
 
     def _convert_record_meta_to_json(item):
         if not isinstance(item[1], dict):
-            raise ValueError("Cannot mix dictionary and string metadata fields in the same upsert")
+            raise ValueError(
+                "Cannot mix dictionary and string metadata fields in the same upsert")
         return (item[0], json.dumps(item[1]), item[2], item[3])
-    
+
     def upsert(self, records):
         """
         Performs upsert operation for multiple records.
@@ -501,8 +512,9 @@ class Sync:
             None
         """
         if isinstance(records[0][1], dict):
-            records = list(map(lambda item: Async._convert_record_meta_to_json(item), records))
-                    
+            records = list(
+                map(lambda item: Async._convert_record_meta_to_json(item), records))
+
         query = self.builder.get_upsert_query()
         query, _ = self._translate_to_pyformat(query, None)
         with self.connect() as conn:
@@ -529,12 +541,12 @@ class Sync:
             None
         """
         if drop_index:
-            self.drop_embedding_index();
+            self.drop_embedding_index()
         query = self.builder.delete_all_query()
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
-    
+
     def delete_by_ids(self, id: List[uuid.UUID]):
         """
         Delete records by id.
@@ -592,7 +604,7 @@ class Sync:
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
-    
+
     def create_ivfflat_index(self, num_records=None):
         """
         Creates an ivfflat index for the table.
@@ -610,7 +622,7 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
 
-    def search(self, query_embedding: Optional[List[float]]=None, limit: int=10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
+    def search(self, query_embedding: Optional[List[float]] = None, limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
         """
         Retrieves similar records using a similarity query.
 
@@ -625,9 +637,10 @@ class Sync:
         if query_embedding is not None:
             query_embedding_np = np.array(query_embedding)
         else:
-           query_embedding_np = None 
-            
-        (query, params) = self.builder.search_query(query_embedding_np, limit, filter)
+            query_embedding_np = None
+
+        (query, params) = self.builder.search_query(
+            query_embedding_np, limit, filter)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
