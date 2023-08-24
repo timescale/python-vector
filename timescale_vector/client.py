@@ -25,7 +25,8 @@ class QueryBuilder:
             self,
             table_name: str,
             num_dimensions: int,
-            distance_type: str = 'cosine') -> None:
+            distance_type: str,
+            id_type: str) -> None:
         """
         Initializes a base Vector object to generate queries for vector clients.
 
@@ -42,6 +43,11 @@ class QueryBuilder:
             self.distance_type = '<->'
         else:
             raise ValueError(f"unrecognized distance_type {distance_type}")
+
+        if id_type.lower() != 'uuid' and id_type.lower() != 'text':
+            raise ValueError(f"unrecognized id_type {id_type}")
+
+        self.id_type = id_type.lower()
 
     def _quote_ident(self, ident):
         """
@@ -95,14 +101,14 @@ class QueryBuilder:
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS {table_name} (
-    id UUID PRIMARY KEY,
+    id {id_type} PRIMARY KEY,
     metadata JSONB,
     contents TEXT,
     embedding VECTOR({dimensions})
 );
 
 CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb_path_ops);
-'''.format(table_name=self._quote_ident(self.table_name), index_name=self._quote_ident(self.table_name+"_meta_idx"), dimensions=self.num_dimensions)
+'''.format(table_name=self._quote_ident(self.table_name), id_type=self.id_type, index_name=self._quote_ident(self.table_name+"_meta_idx"), dimensions=self.num_dimensions)
 
     def _get_embedding_index_name(self):
         return self._quote_ident(self.table_name+"_embedding_idx")
@@ -113,10 +119,10 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
     def delete_all_query(self):
         return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
 
-    def delete_by_ids_query(self, id: List[uuid.UUID]) -> Tuple[str, List]:
-        query = "DELETE FROM {table_name} WHERE id = ANY($1::uuid[]);".format(
-            table_name=self._quote_ident(self.table_name))
-        return (query, [id])
+    def delete_by_ids_query(self, ids: Union[List[uuid.UUID], List[str]]) -> Tuple[str, List]:
+        query = "DELETE FROM {table_name} WHERE id = ANY($1::{id_type}[]);".format(
+            table_name=self._quote_ident(self.table_name), id_type=self.id_type)
+        return (query, [ids])
 
     def delete_by_metadata_query(self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
         params: List[Any] = []
@@ -220,7 +226,8 @@ class Async(QueryBuilder):
             service_url: str,
             table_name: str,
             num_dimensions: int,
-            distance_type: str = 'cosine') -> None:
+            distance_type: str = 'cosine',
+            id_type='UUID') -> None:
         """
         Initializes a async client for storing vector data.
 
@@ -230,7 +237,8 @@ class Async(QueryBuilder):
             num_dimensions (int): The number of dimensions for the embedding vector.
             distance_type (str, optional): The distance type for indexing. Default is 'cosine' or '<=>'.
         """
-        self.builder = QueryBuilder(table_name, num_dimensions, distance_type)
+        self.builder = QueryBuilder(
+            table_name, num_dimensions, distance_type, id_type)
         self.service_url = service_url
         self.pool = None
 
@@ -317,11 +325,11 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def delete_by_ids(self, id: List[uuid.UUID]):
+    async def delete_by_ids(self, ids: Union[List[uuid.UUID], List[str]]):
         """
         Delete records by id.
         """
-        (query, params) = self.builder.delete_by_ids_query(id)
+        (query, params) = self.builder.delete_by_ids_query(ids)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
@@ -417,8 +425,10 @@ class Sync:
             service_url: str,
             table_name: str,
             num_dimensions: int,
-            distance_type: str = 'cosine') -> None:
-        self.builder = QueryBuilder(table_name, num_dimensions, distance_type)
+            distance_type: str = 'cosine',
+            id_type='UUID') -> None:
+        self.builder = QueryBuilder(
+            table_name, num_dimensions, distance_type, id_type)
         self.service_url = service_url
         self.pool = None
         psycopg2.extras.register_uuid()
@@ -547,11 +557,11 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
 
-    def delete_by_ids(self, id: List[uuid.UUID]):
+    def delete_by_ids(self, ids: Union[List[uuid.UUID], List[str]]):
         """
         Delete records by id.
         """
-        (query, params) = self.builder.delete_by_ids_query(id)
+        (query, params) = self.builder.delete_by_ids_query(ids)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
