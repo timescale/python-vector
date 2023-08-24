@@ -166,6 +166,9 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             .format(index_name=self._get_embedding_index_name(), table_name=self._quote_ident(self.table_name), column_name=self._quote_ident(column_name), index_method=index_method, num_lists=num_lists)
 
     def _where_clause_for_filter(self, params: List, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]]) -> Tuple[str, List]:
+        if filter == None:
+            return ("TRUE", params)
+
         if isinstance(filter, dict):
             where = "metadata @> ${index}".format(index=len(params)+1)
             json_object = json.dumps(filter)
@@ -178,7 +181,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
                 index=len(params) + 1)
             params = params + [any_params]
         else:
-            where = "TRUE"
+            raise ValueError("Unknown filter type: {filter_type}".format(filter_type=type(filter)))
 
         return (where, params)
 
