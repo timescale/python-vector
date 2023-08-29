@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_CONTENTS_IDX', 'SEARCH_RESULT_EMBEDDING_IDX',
-           'SEARCH_RESULT_DISTANCE_IDX', 'QueryBuilder', 'Async', 'Sync']
+           'SEARCH_RESULT_DISTANCE_IDX', 'Predicates', 'QueryBuilder', 'Async', 'Sync']
 
 # %% ../nbs/00_vector.ipynb 6
 import asyncpg
@@ -20,6 +20,95 @@ SEARCH_RESULT_EMBEDDING_IDX = 3
 SEARCH_RESULT_DISTANCE_IDX = 4
 
 # %% ../nbs/00_vector.ipynb 8
+class Predicates:
+    logical_operators = {
+        "AND": "AND",
+        "OR": "OR",
+        "NOT": "NOT",
+    }
+
+    operators_mapping = {
+        "=": "=",
+        "==": "=",
+        ">=": ">=",
+        ">": ">",
+        "<=": "<=",
+        "<": "<",
+        "!=": "<>",
+    }
+
+    def __init__(self, *clauses: Union['Predicates', Tuple[str, str], Tuple[str, str, str]], operator: str = 'AND'):
+        if operator not in self.logical_operators: 
+            raise ValueError(f"invalid operator: {operator}")
+        self.operator = operator
+        self.clauses = list(clauses)
+
+    def add_clause(self, clause: Union['Predicates', Tuple[str, str], Tuple[str, str, str]]):
+        self.clauses.append(clause)
+
+    def add_clauses(self, clauses_list: List[Union['Predicates', Tuple[str, str], Tuple[str, str, str]]]):
+        self.clauses.extend(clauses_list)
+        
+    def __and__(self, other):
+        new_predicates = Predicates(self, other, operator='AND')
+        return new_predicates
+
+    def __or__(self, other):
+        new_predicates = Predicates(self, other, operator='OR')
+        return new_predicates
+
+    def __invert__(self):
+        new_predicates = Predicates(self, operator='NOT')
+        return new_predicates
+
+    def __repr__(self):
+        if self.operator:
+            return f"{self.operator}({', '.join(repr(clause) for clause in self.clauses)})"
+        else:
+            return repr(self.clauses)
+
+    def build_query(self, params: List) -> Tuple[str, List]:
+        if not self.clauses:
+            return "", []
+
+        where_conditions = [] 
+
+        for clause in self.clauses:
+            if isinstance(clause, Predicates):
+                child_where_clause, params = clause.build_query(params)
+                where_conditions.append(f"({child_where_clause})")
+            elif isinstance(clause, tuple):
+                if len(clause) == 2:
+                    field, value = clause
+                    operator = "="  # Default operator
+                elif len(clause) == 3:
+                    field, operator, value = clause
+                    if operator not in self.operators_mapping:
+                       raise ValueError(f"Invalid operator: {operator}") 
+                    operator = self.operators_mapping[operator]
+                else:
+                    raise ValueError("Invalid clause format")
+            
+                field_cast = ''
+                if isinstance(value, int):
+                    field_cast = '::int'
+                elif isinstance(value, float):
+                    field_cast = '::numeric'  
+
+                index = len(params)+1
+                param_name = f"${index}"
+                where_conditions.append(f"(metadata->>'{field}'){field_cast} {operator} {param_name}")
+                params.append(value) 
+
+        if self.operator == 'NOT':
+            or_clauses = (" OR ").join(where_conditions)
+            #use IS DISTINCT FROM to treat all-null clauses as False and pass the filter
+            where_clause = f"TRUE IS DISTINCT FROM ({or_clauses})"
+        else:
+            where_clause = (" "+self.operator+" ").join(where_conditions)         
+        return where_clause, params
+
+# %% ../nbs/00_vector.ipynb 9
 class QueryBuilder:
     def __init__(
             self,
@@ -185,7 +274,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
         return (where, params)
 
-    def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None) -> Tuple[str, List]:
+    def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None, predicates: Optional[Predicates] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
@@ -208,7 +297,19 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             distance = "-1.0"
             order_by_clause = ""
 
-        (where, params) = self._where_clause_for_filter(params, filter)
+        where_clauses = []
+        if filter is not None:
+            (where_filter, params) = self._where_clause_for_filter(params, filter)
+            where_clauses.append(where_filter)
+
+        if predicates is not None:
+            (where_predicates, params) = predicates.build_query(params)
+            where_clauses.append(where_predicates)
+        
+        if len(where_clauses) > 0:
+            where = " AND ".join(where_clauses)
+        else:
+            where = "TRUE"
 
         query = '''
         SELECT
@@ -222,7 +323,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), limit=limit)
         return (query, params)
 
-# %% ../nbs/00_vector.ipynb 11
+# %% ../nbs/00_vector.ipynb 12
 class Async(QueryBuilder):
     def __init__(
             self,
@@ -399,7 +500,8 @@ class Async(QueryBuilder):
                      query_embedding: Optional[List[float]] = None,
                      # The number of nearest neighbors to retrieve. Default is 10.
                      limit: int = 10,
-                     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):  # A filter for metadata. Default is None.
+                     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
+                     predicates: Optional[Predicates] = None):  # A filter for metadata. Default is None.
         """
         Retrieves similar records using a similarity query.
 
@@ -407,11 +509,11 @@ class Async(QueryBuilder):
             List: List of similar records.
         """
         (query, params) = self.builder.search_query(
-            query_embedding, limit, filter)
+            query_embedding, limit, filter, predicates)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
-# %% ../nbs/00_vector.ipynb 19
+# %% ../nbs/00_vector.ipynb 20
 import psycopg2.pool
 from contextlib import contextmanager
 import psycopg2.extras
@@ -419,7 +521,7 @@ import pgvector.psycopg2
 import numpy as np
 import re
 
-# %% ../nbs/00_vector.ipynb 20
+# %% ../nbs/00_vector.ipynb 21
 class Sync:
     translated_queries: Dict[str, str] = {}
 
@@ -635,7 +737,11 @@ class Sync:
             with conn.cursor() as cur:
                 cur.execute(query)
 
-    def search(self, query_embedding: Optional[List[float]] = None, limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None):
+    def search(self, 
+    query_embedding: Optional[List[float]] = None, 
+    limit: int = 10, 
+    filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
+    predicates: Optional[Predicates] = None):
         """
         Retrieves similar records using a similarity query.
 
@@ -653,7 +759,7 @@ class Sync:
             query_embedding_np = None
 
         (query, params) = self.builder.search_query(
-            query_embedding_np, limit, filter)
+            query_embedding_np, limit, filter, predicates)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
