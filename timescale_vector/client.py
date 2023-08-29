@@ -39,16 +39,31 @@ class Predicates:
     }
 
     def __init__(self, *clauses: Union['Predicates', Tuple[str, str], Tuple[str, str, str]], operator: str = 'AND'):
+        """
+        Predicates class defines predicates on the object metadata. Predicates can be combined using logical operators (&, |, and ~).
+
+        Parameters
+        ----------
+        clauses
+            Predicate clauses. Can be either another Predicates object or a tuple of the form (field, operator, value) or (field, value).
+        Operator
+            Logical operator to use when combining the clauses. Can be one of 'AND', 'OR', 'NOT'. Defaults to 'AND'.
+        """
         if operator not in self.logical_operators: 
             raise ValueError(f"invalid operator: {operator}")
         self.operator = operator
         self.clauses = list(clauses)
 
-    def add_clause(self, clause: Union['Predicates', Tuple[str, str], Tuple[str, str, str]]):
-        self.clauses.append(clause)
+    def add_clause(self, *clause: Union['Predicates', Tuple[str, str], Tuple[str, str, str]]):
+        """
+        Add a clause to the predicates object.
 
-    def add_clauses(self, clauses_list: List[Union['Predicates', Tuple[str, str], Tuple[str, str, str]]]):
-        self.clauses.extend(clauses_list)
+        Parameters
+        ----------
+        clause: 'Predicates' or Tuple[str, str] or Tuple[str, str, str]
+            Predicate clause. Can be either another Predicates object or a tuple of the form (field, operator, value) or (field, value).
+        """
+        self.clauses.extend(list(clause))
         
     def __and__(self, other):
         new_predicates = Predicates(self, other, operator='AND')
@@ -78,6 +93,9 @@ class Predicates:
             return repr(self.clauses)
 
     def build_query(self, params: List) -> Tuple[str, List]:
+        """
+        Build the SQL query string and parameters for the predicates object.
+        """
         if not self.clauses:
             return "", []
 
@@ -115,7 +133,7 @@ class Predicates:
             #use IS DISTINCT FROM to treat all-null clauses as False and pass the filter
             where_clause = f"TRUE IS DISTINCT FROM ({or_clauses})"
         else:
-            where_clause = (" "+self.operator+" ").join(where_conditions)         
+            where_clause = (" "+self.operator+" ").join(where_conditions)
         return where_clause, params
 
 # %% ../nbs/00_vector.ipynb 9
@@ -129,10 +147,16 @@ class QueryBuilder:
         """
         Initializes a base Vector object to generate queries for vector clients.
 
-        Args:
-            table_name (str): The name of the table.
-            num_dimensions (int): The number of dimensions for the embedding vector.
-            distance_type (str, optional): The distance type for indexing. Default is 'cosine' or '<=>'.
+        Parameters
+        ----------
+        table_name
+            The name of the table.
+        num_dimensions
+            The number of dimensions for the embedding vector.
+        distance_type
+            The distance type for indexing.
+        id_type
+            The type of the id column. Can be either 'UUID' or 'TEXT'.
         """
         self.table_name = table_name
         self.num_dimensions = num_dimensions
@@ -152,10 +176,13 @@ class QueryBuilder:
         """
         Quotes an identifier to prevent SQL injection.
 
-        Args:
-            ident (str): The identifier to be quoted.
+        Parameters
+        ----------
+        ident
+            The identifier to be quoted.
 
-        Returns:
+        Returns
+        -------
             str: The quoted identifier.
         """
         return '"{}"'.format(ident.replace('"', '""'))
@@ -164,7 +191,8 @@ class QueryBuilder:
         """
         Generates a query to check if any rows exist in the table.
 
-        Returns:
+        Returns
+        -------
             str: The query to check for row existence.
         """
         return "SELECT 1 FROM {table_name} LIMIT 1".format(table_name=self._quote_ident(self.table_name))
@@ -173,7 +201,8 @@ class QueryBuilder:
         """
         Generates an upsert query.
 
-        Returns:
+        Returns
+        -------
             str: The upsert query.
         """
         return "INSERT INTO {table_name} (id, metadata, contents, embedding) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING".format(table_name=self._quote_ident(self.table_name))
@@ -182,7 +211,8 @@ class QueryBuilder:
         """
         Generate a query to find the approximate count of records in the table.
 
-        Returns:
+        Returns
+        -------
             str: the query.
         """
         # todo optimize with approx
@@ -193,7 +223,8 @@ class QueryBuilder:
         """
         Generates a query to create the tables, indexes, and extensions needed to store the vector data.
 
-        Returns:
+        Returns
+        -------
             str: The create table query.
         """
         return '''
@@ -237,10 +268,13 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         """
         Generates an ivfflat index creation query.
 
-        Args:
-            num_records (int): The number of records in the table.
+        Parameters
+        ----------
+        num_records
+            The number of records in the table.
 
-        Returns:
+        Returns
+        -------
             str: The index creation query.
         """
         column_name = "embedding"
@@ -287,11 +321,6 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
     def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None, predicates: Optional[Predicates] = None) -> Tuple[str, List]:
         """
         Generates a similarity query.
-
-        Args:
-            query_embedding (Optiona[List[float]], optional): The query embedding vector.
-            k (int, optional): The number of nearest neighbors to retrieve. Default is 10.
-            filter (Optional[dict], optional): A filter for metadata. Default is None.
 
         Returns:
             Tuple[str, List]: A tuple containing the query and parameters.
@@ -345,11 +374,18 @@ class Async(QueryBuilder):
         """
         Initializes a async client for storing vector data.
 
-        Args:
-            service_url (str): The connection string for the database.
-            table_name (str): The name of the table.
-            num_dimensions (int): The number of dimensions for the embedding vector.
-            distance_type (str, optional): The distance type for indexing. Default is 'cosine' or '<=>'.
+        Parameters
+        ----------
+        service_url
+            The connection string for the database.
+        table_name
+            The name of the table.
+        num_dimensions
+            The number of dimensions for the embedding vector.
+        distance_type
+            The distance type for indexing.
+        id_type
+            The type of the id column. Can be either 'UUID' or 'TEXT'.
         """
         self.builder = QueryBuilder(
             table_name, num_dimensions, distance_type, id_type)
@@ -360,7 +396,8 @@ class Async(QueryBuilder):
         """
         Establishes a connection to a PostgreSQL database using asyncpg.
 
-        Returns:
+        Returns
+        -------
             asyncpg.Connection: The established database connection.
         """
         if self.pool == None:
@@ -384,7 +421,8 @@ class Async(QueryBuilder):
         """
         Checks if the table is empty.
 
-        Returns:
+        Returns
+        -------
             bool: True if the table is empty, False otherwise.
         """
         query = self.builder.get_row_exists_query()
@@ -402,10 +440,13 @@ class Async(QueryBuilder):
         """
         Performs upsert operation for multiple records.
 
-        Args:
-            records: Records to upsert.
+        Parameters
+        ----------
+        records
+            List of records to upsert. Each record is a tuple of the form (id, metadata, contents, embedding).
 
-        Returns:
+        Returns
+        -------
             None
         """
         if isinstance(records[0][1], dict):
@@ -419,7 +460,8 @@ class Async(QueryBuilder):
         """
         Creates necessary tables.
 
-        Returns:
+        Returns
+        -------
             None
         """
         query = self.builder.get_create_query()
@@ -430,7 +472,8 @@ class Async(QueryBuilder):
         """
         Deletes all data. Also drops the index if `drop_index` is true.
 
-        Returns:
+        Returns
+        -------
             None
         """
         if drop_index:
@@ -459,7 +502,8 @@ class Async(QueryBuilder):
         """
         Drops the table
 
-        Returns:
+        Returns
+        -------
             None
         """
         query = self.builder.drop_table_query()
@@ -470,7 +514,8 @@ class Async(QueryBuilder):
         """
         Retrieves an approximate count of records in the table.
 
-        Returns:
+        Returns
+        -------
             int: Approximate count of records.
         """
         query = self.builder.get_approx_count_query()
@@ -482,7 +527,8 @@ class Async(QueryBuilder):
         """
         Drop any index on the emedding
 
-        Returns:
+        Returns
+        -------
             None
         """
         query = self.builder.drop_embedding_index_query()
@@ -493,10 +539,13 @@ class Async(QueryBuilder):
         """
         Creates an ivfflat index for the table.
 
-        Args:
-            num_records (int, optional): The number of records. If None, it's calculated. Default is None.
+        Parameters
+        ----------
+        num_records : int, optional
+            The number of records. If None, it's calculated. Default is None.
 
-        Returns:
+        Returns
+        --------
             None
         """
         if num_records == None:
@@ -506,16 +555,26 @@ class Async(QueryBuilder):
             await pool.execute(query)
 
     async def search(self,
-                     # vector to search for
-                     query_embedding: Optional[List[float]] = None,
-                     # The number of nearest neighbors to retrieve. Default is 10.
+                     query_embedding: Optional[List[float]] = None, 
                      limit: int = 10,
                      filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
-                     predicates: Optional[Predicates] = None):  # A filter for metadata. Default is None.
+                     predicates: Optional[Predicates] = None): 
         """
         Retrieves similar records using a similarity query.
 
-        Returns:
+        Parameters
+        ----------
+        query_embedding 
+            The query embedding vector.
+        limit 
+            The number of nearest neighbors to retrieve.
+        filter 
+            A filter for metadata. Should be specified as a key-value object or a list of key-value objects (where any objects in the list are matched).
+        predicates
+            A Predicates object to filter the results. Predicates support more complex queries than the filter parameter. Predicates can be combined using logical operators (&, |, and ~).
+
+        Returns
+        --------
             List: List of similar records.
         """
         (query, params) = self.builder.search_query(
@@ -542,6 +601,22 @@ class Sync:
             num_dimensions: int,
             distance_type: str = 'cosine',
             id_type='UUID') -> None:
+        """
+        Initializes a sync client for storing vector data.
+
+        Parameters
+        ----------
+        service_url
+            The connection string for the database.
+        table_name
+            The name of the table.
+        num_dimensions
+            The number of dimensions for the embedding vector.
+        distance_type
+            The distance type for indexing.
+        id_type
+            The type of the primary id column. Can be either 'UUID' or 'TEXT'.
+        """
         self.builder = QueryBuilder(
             table_name, num_dimensions, distance_type, id_type)
         self.service_url = service_url
@@ -610,7 +685,8 @@ class Sync:
         """
         Checks if the table is empty.
 
-        Returns:
+        Returns
+        -------
             bool: True if the table is empty, False otherwise.
         """
         query = self.builder.get_row_exists_query()
@@ -630,10 +706,13 @@ class Sync:
         """
         Performs upsert operation for multiple records.
 
-        Args:
-            records: Records to upsert.
+        Parameters
+        ----------
+        records
+            Records to upsert.
 
-        Returns:
+        Returns
+        -------
             None
         """
         if isinstance(records[0][1], dict):
@@ -650,7 +729,8 @@ class Sync:
         """
         Creates necessary tables.
 
-        Returns:
+        Returns
+        -------
             None
         """
         query = self.builder.get_create_query()
@@ -662,7 +742,8 @@ class Sync:
         """
         Deletes all data. Also drops the index if `drop_index` is true.
 
-        Returns:
+        Returns
+        -------
             None
         """
         if drop_index:
@@ -675,6 +756,11 @@ class Sync:
     def delete_by_ids(self, ids: Union[List[uuid.UUID], List[str]]):
         """
         Delete records by id.
+
+        Parameters
+        ----------
+        ids
+            List of ids to delete.
         """
         (query, params) = self.builder.delete_by_ids_query(ids)
         query, params = self._translate_to_pyformat(query, params)
@@ -696,7 +782,8 @@ class Sync:
         """
         Drops the table
 
-        Returns:
+        Returns
+        -------
             None
         """
         query = self.builder.drop_table_query()
@@ -708,7 +795,8 @@ class Sync:
         """
         Retrieves an approximate count of records in the table.
 
-        Returns:
+        Returns
+        -------
             int: Approximate count of records.
         """
         query = self.builder.get_approx_count_query()
@@ -722,7 +810,8 @@ class Sync:
         """
         Drop any index on the emedding
 
-        Returns:
+        Returns
+        -------
             None
         """
         query = self.builder.drop_embedding_index_query()
@@ -734,10 +823,13 @@ class Sync:
         """
         Creates an ivfflat index for the table.
 
-        Args:
-            num_records (int, optional): The number of records. If None, it's calculated. Default is None.
+        Parameters
+        ----------
+        num_records
+            The number of records. If None, it's calculated. Default is None.
 
-        Returns:
+        Returns
+        -------
             None
         """
         if num_records == None:
@@ -755,12 +847,19 @@ class Sync:
         """
         Retrieves similar records using a similarity query.
 
-        Args:
-            query_embedding (List[float]): The query embedding vector.
-            k (int, optional): The number of nearest neighbors to retrieve. Default is 10.
-            filter (Optional[dict], optional): A filter for metadata. Default is None.
+        Parameters
+        ----------
+        query_embedding 
+            The query embedding vector.
+        limit 
+            The number of nearest neighbors to retrieve.
+        filter 
+            A filter for metadata. Should be specified as a key-value object or a list of key-value objects (where any objects in the list are matched).
+        predicates
+            A Predicates object to filter the results. Predicates support more complex queries than the filter parameter. Predicates can be combined using logical operators (&, |, and ~).
 
-        Returns:
+        Returns
+        --------
             List: List of similar records.
         """
         if query_embedding is not None:
