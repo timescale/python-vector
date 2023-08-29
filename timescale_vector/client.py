@@ -62,6 +62,15 @@ class Predicates:
         new_predicates = Predicates(self, operator='NOT')
         return new_predicates
 
+    def __eq__(self, other):
+        if not isinstance(other, Predicates):
+            return False
+
+        return (
+            self.operator == other.operator and
+            self.clauses == other.clauses
+        )
+
     def __repr__(self):
         if self.operator:
             return f"{self.operator}({', '.join(repr(clause) for clause in self.clauses)})"
