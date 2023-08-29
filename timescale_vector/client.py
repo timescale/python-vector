@@ -11,6 +11,7 @@ from pgvector.asyncpg import register_vector
 from typing import (List, Optional, Union, Dict, Tuple, Any)
 import json
 import numpy as np
+import math
 
 # %% ../nbs/00_vector.ipynb 7
 SEARCH_RESULT_ID_IDX = 0
