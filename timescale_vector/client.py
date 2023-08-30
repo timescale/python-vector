@@ -243,6 +243,9 @@ class QueryBuilder:
                 bytes bytea;
                 BEGIN
                 bytes := uuid_send(uuid);
+                if  (get_byte(bytes, 6) >> 4)::int2 != 1 then
+                    RAISE EXCEPTION 'UUID version is not 1';
+                end if;
                 RETURN to_timestamp(
                             (
                                 (
@@ -510,12 +513,6 @@ class Async(QueryBuilder):
             return rec == None
 
     def munge_record(self, records) -> Iterable[Tuple[uuid.UUID, str, str, List[float]]]:
-        if self.time_partition_interval is not None:
-            for record in records:
-                id = record[0]
-                if id.variant != uuid.RFC_4122 or id.version != 1:
-                    raise ValueError("When using time partitioning, id must be a v1 uuid")
-
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
            records = map(lambda item: Async._convert_record_meta_to_json(item), records)
@@ -813,12 +810,6 @@ class Sync:
                 return rec == None
     
     def munge_record(self, records) -> Iterable[Tuple[uuid.UUID, str, str, List[float]]]:
-        if self.time_partition_interval is not None:
-            for record in records:
-                id = record[0]
-                if id.variant != uuid.RFC_4122 or id.version != 1:
-                    raise ValueError("When using time partitioning, id must be a v1 uuid")
-
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
            records = map(lambda item: Sync._convert_record_meta_to_json(item), records)
