@@ -12,6 +12,7 @@ from typing import (List, Optional, Union, Dict, Tuple, Any)
 import json
 import numpy as np
 import math
+from datetime import timedelta
 
 # %% ../nbs/00_vector.ipynb 7
 SEARCH_RESULT_ID_IDX = 0
@@ -143,7 +144,8 @@ class QueryBuilder:
             table_name: str,
             num_dimensions: int,
             distance_type: str,
-            id_type: str) -> None:
+            id_type: str,
+            time_partition_interval: Optional[timedelta]) -> None:
         """
         Initializes a base Vector object to generate queries for vector clients.
 
@@ -171,6 +173,7 @@ class QueryBuilder:
             raise ValueError(f"unrecognized id_type {id_type}")
 
         self.id_type = id_type.lower()
+        self.time_partition_interval = time_partition_interval
 
     def _quote_ident(self, ident):
         """
@@ -227,8 +230,44 @@ class QueryBuilder:
         -------
             str: The create table query.
         """
+        hypertable_sql = ""
+        if self.time_partition_interval is not None:
+            hypertable_sql = '''
+                CREATE EXTENSION IF NOT EXISTS timescaledb;
+
+                CREATE OR REPLACE FUNCTION public.uuid_timestamp(uuid UUID) RETURNS TIMESTAMPTZ AS $$
+                DECLARE
+                bytes bytea;
+                BEGIN
+                bytes := uuid_send(uuid);
+                RETURN to_timestamp(
+                            (
+                                (
+                                (get_byte(bytes, 0)::bigint << 24) |
+                                (get_byte(bytes, 1)::bigint << 16) |
+                                (get_byte(bytes, 2)::bigint <<  8) |
+                                (get_byte(bytes, 3)::bigint <<  0)
+                                ) + (
+                                ((get_byte(bytes, 4)::bigint << 8 |
+                                get_byte(bytes, 5)::bigint)) << 32
+                                ) + (
+                                (((get_byte(bytes, 6)::bigint & 15) << 8 | get_byte(bytes, 7)::bigint) & 4095) << 48
+                                ) - 122192928000000000
+                            ) / 10000 / 1000::double precision
+                        );
+                END
+                $$ LANGUAGE plpgsql
+                IMMUTABLE PARALLEL SAFE
+                RETURNS NULL ON NULL INPUT;
+
+                SELECT create_hypertable('{table_name}', 'id', time_partitioning_func=>'public.uuid_timestamp', chunk_time_interval => '{chunk_time_interval} seconds'::interval);
+            '''.format(
+                table_name=self._quote_ident(self.table_name), 
+                chunk_time_interval=str(self.time_partition_interval.total_seconds()),
+                )
         return '''
 CREATE EXTENSION IF NOT EXISTS vector;
+
 
 CREATE TABLE IF NOT EXISTS {table_name} (
     id {id_type} PRIMARY KEY,
@@ -238,7 +277,15 @@ CREATE TABLE IF NOT EXISTS {table_name} (
 );
 
 CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb_path_ops);
-'''.format(table_name=self._quote_ident(self.table_name), id_type=self.id_type, index_name=self._quote_ident(self.table_name+"_meta_idx"), dimensions=self.num_dimensions)
+
+{hypertable_sql}
+'''.format(
+            table_name=self._quote_ident(self.table_name), 
+            id_type=self.id_type, 
+            index_name=self._quote_ident(self.table_name+"_meta_idx"), 
+            dimensions=self.num_dimensions,
+            hypertable_sql=hypertable_sql,
+            )
 
     def _get_embedding_index_name(self):
         return self._quote_ident(self.table_name+"_embedding_idx")
@@ -263,6 +310,13 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
     def drop_table_query(self):
         return "DROP TABLE IF EXISTS {table_name};".format(table_name=self._quote_ident(self.table_name))
+    
+    def default_max_db_connection_query(self):
+        """
+        Generates a query to get the default max db connections. This uses a heuristic to determine the max connections based on the max_connections setting in postgres
+        and the number of currently used connections. This heuristic leaves 4 connections in reserve.
+        """
+        return "SELECT greatest(1, ((SELECT setting::int FROM pg_settings WHERE name='max_connections')-(SELECT count(*) FROM pg_stat_activity) - 4)::int)"
 
     def create_ivfflat_index_query(self, num_records):
         """
@@ -370,7 +424,10 @@ class Async(QueryBuilder):
             table_name: str,
             num_dimensions: int,
             distance_type: str = 'cosine',
-            id_type='UUID') -> None:
+            id_type='UUID',
+            time_partition_interval: Optional[timedelta] = None,
+            max_db_connections: Optional[int] = None
+            ) -> None:
         """
         Initializes a async client for storing vector data.
 
@@ -388,9 +445,25 @@ class Async(QueryBuilder):
             The type of the id column. Can be either 'UUID' or 'TEXT'.
         """
         self.builder = QueryBuilder(
-            table_name, num_dimensions, distance_type, id_type)
+            table_name, num_dimensions, distance_type, id_type, time_partition_interval)
         self.service_url = service_url
         self.pool = None
+        self.max_db_connections = max_db_connections
+
+    async def _default_max_db_connections(self) -> int:
+        """
+        Gets a default value for the number of max db connections to use.
+
+        Returns
+        -------
+            None
+        """
+        query = self.builder.default_max_db_connection_query()
+        conn = await asyncpg.connect(dsn=self.service_url)
+        num_connections = await conn.fetchval(query)
+        await conn.close()
+        return num_connections
+
 
     async def connect(self):
         """
@@ -401,6 +474,8 @@ class Async(QueryBuilder):
             asyncpg.Connection: The established database connection.
         """
         if self.pool == None:
+            if self.max_db_connections == None:
+                self.max_db_connections = await self._default_max_db_connections()
             async def init(conn):
                 await register_vector(conn)
                 # decode to a dict, but accept a string as input in upsert
@@ -410,7 +485,7 @@ class Async(QueryBuilder):
                     decoder=json.loads,
                     schema='pg_catalog')
 
-            self.pool = await asyncpg.create_pool(dsn=self.service_url, init=init)
+            self.pool = await asyncpg.create_pool(dsn=self.service_url, init=init, min_size=1, max_size=self.max_db_connections)
         return self.pool.acquire()
 
     async def close(self):
@@ -450,8 +525,7 @@ class Async(QueryBuilder):
             None
         """
         if isinstance(records[0][1], dict):
-            records = list(
-                map(lambda item: Async._convert_record_meta_to_json(item), records))
+            records = map(lambda item: Async._convert_record_meta_to_json(item), records)
         query = self.builder.get_upsert_query()
         async with await self.connect() as pool:
             await pool.executemany(query, records)
@@ -465,8 +539,10 @@ class Async(QueryBuilder):
             None
         """
         query = self.builder.get_create_query()
-        async with await self.connect() as pool:
-            await pool.execute(query)
+        #don't use a connection pool for this because the vector extension may not be installed yet and if it's not installed, register_vector will fail.
+        conn = await asyncpg.connect(dsn=self.service_url)
+        await conn.execute(query)
+        await conn.close()
 
     async def delete_all(self, drop_index=True):
         """
@@ -600,7 +676,10 @@ class Sync:
             table_name: str,
             num_dimensions: int,
             distance_type: str = 'cosine',
-            id_type='UUID') -> None:
+            id_type='UUID',
+            time_partition_interval: Optional[timedelta] = None,
+            max_db_connections: Optional[int] = None
+            ) -> None:
         """
         Initializes a sync client for storing vector data.
 
@@ -618,10 +697,27 @@ class Sync:
             The type of the primary id column. Can be either 'UUID' or 'TEXT'.
         """
         self.builder = QueryBuilder(
-            table_name, num_dimensions, distance_type, id_type)
+            table_name, num_dimensions, distance_type, id_type, time_partition_interval)
         self.service_url = service_url
         self.pool = None
+        self.max_db_connections = max_db_connections
         psycopg2.extras.register_uuid()
+
+    def default_max_db_connections(self):
+        """
+        Gets a default value for the number of max db connections to use.
+
+        Returns
+        -------
+            None
+        """
+        query = self.builder.default_max_db_connection_query()
+        conn = psycopg2.connect(dsn=self.service_url)
+        with conn.cursor() as cur:
+                cur.execute(query)
+                num_connections = cur.fetchone() 
+        conn.close()
+        return num_connections[0]
 
     @contextmanager
     def connect(self):
@@ -630,8 +726,11 @@ class Sync:
         use in a context manager.
         """
         if self.pool == None:
+            if self.max_db_connections == None:
+                self.max_db_connections = self.default_max_db_connections()
+
             self.pool = psycopg2.pool.SimpleConnectionPool(
-                1, 10, dsn=self.service_url)
+                1, self.max_db_connections, dsn=self.service_url)
 
         connection = self.pool.getconn()
         pgvector.psycopg2.register_vector(connection)
@@ -734,9 +833,12 @@ class Sync:
             None
         """
         query = self.builder.get_create_query()
-        with self.connect() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query)
+        #don't use a connection pool for this because the vector extension may not be installed yet and if it's not installed, register_vector will fail.
+        conn = psycopg2.connect(dsn=self.service_url)
+        with conn.cursor() as cur:
+            cur.execute(query)
+        conn.commit()
+        conn.close()
 
     def delete_all(self, drop_index=True):
         """
