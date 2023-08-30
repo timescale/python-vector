@@ -8,7 +8,7 @@ __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_
 import asyncpg
 import uuid
 from pgvector.asyncpg import register_vector
-from typing import (List, Optional, Union, Dict, Tuple, Any)
+from typing import (List, Optional, Union, Dict, Tuple, Any, Iterable)
 import json
 import numpy as np
 import math
@@ -171,6 +171,9 @@ class QueryBuilder:
 
         if id_type.lower() != 'uuid' and id_type.lower() != 'text':
             raise ValueError(f"unrecognized id_type {id_type}")
+
+        if time_partition_interval is not None and id_type.lower() != 'uuid':
+            raise ValueError(f"time partitioning is only supported for uuid id_type")
 
         self.id_type = id_type.lower()
         self.time_partition_interval = time_partition_interval
@@ -449,6 +452,7 @@ class Async(QueryBuilder):
         self.service_url = service_url
         self.pool = None
         self.max_db_connections = max_db_connections
+        self.time_partition_interval = time_partition_interval
 
     async def _default_max_db_connections(self) -> int:
         """
@@ -505,6 +509,19 @@ class Async(QueryBuilder):
             rec = await pool.fetchrow(query)
             return rec == None
 
+    def munge_record(self, records) -> Iterable[Tuple[uuid.UUID, str, str, List[float]]]:
+        if self.time_partition_interval is not None:
+            for record in records:
+                id = record[0]
+                if id.variant != uuid.RFC_4122 or id.version != 1:
+                    raise ValueError("When using time partitioning, id must be a v1 uuid")
+
+        metadata_is_dict = isinstance(records[0][1], dict)
+        if metadata_is_dict:
+           records = map(lambda item: Async._convert_record_meta_to_json(item), records)
+
+        return records 
+
     def _convert_record_meta_to_json(item):
         if not isinstance(item[1], dict):
             raise ValueError(
@@ -524,8 +541,7 @@ class Async(QueryBuilder):
         -------
             None
         """
-        if isinstance(records[0][1], dict):
-            records = map(lambda item: Async._convert_record_meta_to_json(item), records)
+        records = self.munge_record(records)
         query = self.builder.get_upsert_query()
         async with await self.connect() as pool:
             await pool.executemany(query, records)
@@ -701,6 +717,7 @@ class Sync:
         self.service_url = service_url
         self.pool = None
         self.max_db_connections = max_db_connections
+        self.time_partition_interval = time_partition_interval
         psycopg2.extras.register_uuid()
 
     def default_max_db_connections(self):
@@ -794,6 +811,20 @@ class Sync:
                 cur.execute(query)
                 rec = cur.fetchone()
                 return rec == None
+    
+    def munge_record(self, records) -> Iterable[Tuple[uuid.UUID, str, str, List[float]]]:
+        if self.time_partition_interval is not None:
+            for record in records:
+                id = record[0]
+                if id.variant != uuid.RFC_4122 or id.version != 1:
+                    raise ValueError("When using time partitioning, id must be a v1 uuid")
+
+        metadata_is_dict = isinstance(records[0][1], dict)
+        if metadata_is_dict:
+           records = map(lambda item: Sync._convert_record_meta_to_json(item), records)
+
+        return records
+
 
     def _convert_record_meta_to_json(item):
         if not isinstance(item[1], dict):
@@ -814,10 +845,7 @@ class Sync:
         -------
             None
         """
-        if isinstance(records[0][1], dict):
-            records = list(
-                map(lambda item: Async._convert_record_meta_to_json(item), records))
-
+        records = self.munge_record(records)
         query = self.builder.get_upsert_query()
         query, _ = self._translate_to_pyformat(query, None)
         with self.connect() as conn:
