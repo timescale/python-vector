@@ -5,7 +5,7 @@ __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_
            'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async',
            'Sync']
 
-# %% ../nbs/00_vector.ipynb 6
+# %% ../nbs/00_vector.ipynb 5
 import asyncpg
 import uuid
 from pgvector.asyncpg import register_vector
@@ -18,40 +18,31 @@ from datetime import timedelta
 from datetime import datetime
 import calendar
 
-# %% ../nbs/00_vector.ipynb 7
-SEARCH_RESULT_ID_IDX = 0
-SEARCH_RESULT_METADATA_IDX = 1
-SEARCH_RESULT_CONTENTS_IDX = 2
-SEARCH_RESULT_EMBEDDING_IDX = 3
-SEARCH_RESULT_DISTANCE_IDX = 4
-
-# %% ../nbs/00_vector.ipynb 8
+# %% ../nbs/00_vector.ipynb 6
 #copied from Cassandra: https://docs.datastax.com/en/drivers/python/3.2/_modules/cassandra/util.html#uuid_from_time
-def uuid_from_time(time_arg=None, node=None, clock_seq=None):
+def uuid_from_time(time_arg = None, node=None, clock_seq=None):
+    """
+    Converts a datetime or timestamp to a type 1 `uuid.UUID`.
+
+    Parameters
+    ----------
+    time_arg
+        The time to use for the timestamp portion of the UUID.
+        This can either be a `datetime` object or a timestamp in seconds
+        (as returned from `time.time()`).
+    node
+        Bytes for the UUID (up to 48 bits). If not specified, this
+        field is randomized.
+    clock_seq
+        Clock sequence field for the UUID (up to 14 bits). If not specified,
+        a random sequence is generated.
+
+    Returns
+    -------
+        uuid.UUID:  For the given time, node, and clock sequence
+    """
     if time_arg is None:
         return uuid.uuid1(node, clock_seq)
-    """
-    Converts a datetime or timestamp to a type 1 :class:`uuid.UUID`.
-
-    :param time_arg:
-      The time to use for the timestamp portion of the UUID.
-      This can either be a :class:`datetime` object or a timestamp
-      in seconds (as returned from :meth:`time.time()`).
-    :type datetime: :class:`datetime` or timestamp
-
-    :param node:
-      None integer for the UUID (up to 48 bits). If not specified, this
-      field is randomized.
-    :type node: long
-
-    :param clock_seq:
-      Clock sequence field for the UUID (up to 14 bits). If not specified,
-      a random sequence is generated.
-    :type clock_seq: int
-
-    :rtype: :class:`uuid.UUID`
-
-    """
     if hasattr(time_arg, 'utctimetuple'):
         seconds = int(calendar.timegm(time_arg.utctimetuple()))
         microseconds = (seconds * 1e6) + time_arg.time().microsecond
@@ -81,9 +72,19 @@ def uuid_from_time(time_arg=None, node=None, clock_seq=None):
     return uuid.UUID(fields=(time_low, time_mid, time_hi_version,
                              clock_seq_hi_variant, clock_seq_low, node), version=1)
 
+# %% ../nbs/00_vector.ipynb 8
+SEARCH_RESULT_ID_IDX = 0
+SEARCH_RESULT_METADATA_IDX = 1
+SEARCH_RESULT_CONTENTS_IDX = 2
+SEARCH_RESULT_EMBEDDING_IDX = 3
+SEARCH_RESULT_DISTANCE_IDX = 4
+
 # %% ../nbs/00_vector.ipynb 9
 class UUIDTimeRange:
     def __init__(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, start_inclusive=True, end_inclusive=False):
+        """
+         A UUIDTimeRange is a time range predicate on the UUID Version 1 timestamps.
+        """
         if start_date is not None and end_date is not None:
             if start_date > end_date:
                 raise Exception("start_date must be before end_date")
