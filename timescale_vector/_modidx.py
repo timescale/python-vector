@@ -119,4 +119,12 @@ d = { 'settings': { 'branch': 'main',
                                          'timescale_vector.client.Sync.search': ('vector.html#sync.search', 'timescale_vector/client.py'),
                                          'timescale_vector.client.Sync.table_is_empty': ( 'vector.html#sync.table_is_empty',
                                                                                           'timescale_vector/client.py'),
-                                         'timescale_vector.client.Sync.upsert': ('vector.html#sync.upsert', 'timescale_vector/client.py')}}}
+                                         'timescale_vector.client.Sync.upsert': ('vector.html#sync.upsert', 'timescale_vector/client.py'),
+                                         'timescale_vector.client.UUIDTimeRange': ( 'vector.html#uuidtimerange',
+                                                                                    'timescale_vector/client.py'),
+                                         'timescale_vector.client.UUIDTimeRange.__init__': ( 'vector.html#uuidtimerange.__init__',
+                                                                                             'timescale_vector/client.py'),
+                                         'timescale_vector.client.UUIDTimeRange.build_query': ( 'vector.html#uuidtimerange.build_query',
+                                                                                                'timescale_vector/client.py'),
+                                         'timescale_vector.client.uuid_from_time': ( 'vector.html#uuid_from_time',
+                                                                                     'timescale_vector/client.py')}}}

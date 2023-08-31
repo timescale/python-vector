@@ -2,7 +2,8 @@
 
 # %% auto 0
 __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_CONTENTS_IDX', 'SEARCH_RESULT_EMBEDDING_IDX',
-           'SEARCH_RESULT_DISTANCE_IDX', 'Predicates', 'QueryBuilder', 'Async', 'Sync']
+           'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async',
+           'Sync']
 
 # %% ../nbs/00_vector.ipynb 6
 import asyncpg
@@ -12,7 +13,10 @@ from typing import (List, Optional, Union, Dict, Tuple, Any, Iterable)
 import json
 import numpy as np
 import math
+import random
 from datetime import timedelta
+from datetime import datetime
+import calendar
 
 # %% ../nbs/00_vector.ipynb 7
 SEARCH_RESULT_ID_IDX = 0
@@ -22,6 +26,94 @@ SEARCH_RESULT_EMBEDDING_IDX = 3
 SEARCH_RESULT_DISTANCE_IDX = 4
 
 # %% ../nbs/00_vector.ipynb 8
+#copied from Cassandra: https://docs.datastax.com/en/drivers/python/3.2/_modules/cassandra/util.html#uuid_from_time
+def uuid_from_time(time_arg=None, node=None, clock_seq=None):
+    if time_arg is None:
+        return uuid.uuid1(node, clock_seq)
+    """
+    Converts a datetime or timestamp to a type 1 :class:`uuid.UUID`.
+
+    :param time_arg:
+      The time to use for the timestamp portion of the UUID.
+      This can either be a :class:`datetime` object or a timestamp
+      in seconds (as returned from :meth:`time.time()`).
+    :type datetime: :class:`datetime` or timestamp
+
+    :param node:
+      None integer for the UUID (up to 48 bits). If not specified, this
+      field is randomized.
+    :type node: long
+
+    :param clock_seq:
+      Clock sequence field for the UUID (up to 14 bits). If not specified,
+      a random sequence is generated.
+    :type clock_seq: int
+
+    :rtype: :class:`uuid.UUID`
+
+    """
+    if hasattr(time_arg, 'utctimetuple'):
+        seconds = int(calendar.timegm(time_arg.utctimetuple()))
+        microseconds = (seconds * 1e6) + time_arg.time().microsecond
+    else:
+        microseconds = int(time_arg * 1e6)
+
+    # 0x01b21dd213814000 is the number of 100-ns intervals between the
+    # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
+    intervals = int(microseconds * 10) + 0x01b21dd213814000
+
+    time_low = intervals & 0xffffffff
+    time_mid = (intervals >> 32) & 0xffff
+    time_hi_version = (intervals >> 48) & 0x0fff
+
+    if clock_seq is None:
+        clock_seq = random.getrandbits(14)
+    else:
+        if clock_seq > 0x3fff:
+            raise ValueError('clock_seq is out of range (need a 14-bit value)')
+
+    clock_seq_low = clock_seq & 0xff
+    clock_seq_hi_variant = 0x80 | ((clock_seq >> 8) & 0x3f)
+
+    if node is None:
+        node = random.getrandbits(48)
+
+    return uuid.UUID(fields=(time_low, time_mid, time_hi_version,
+                             clock_seq_hi_variant, clock_seq_low, node), version=1)
+
+# %% ../nbs/00_vector.ipynb 9
+class UUIDTimeRange:
+    def __init__(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, start_inclusive=True, end_inclusive=False):
+        if start_date is not None and end_date is not None:
+            if start_date > end_date:
+                raise Exception("start_date must be before end_date")
+        
+        if start_date is None and end_date is None:
+            raise Exception("start_date and end_date cannot both be None")
+
+        self.start_date = start_date
+        self.end_date = end_date
+        self.start_inclusive = start_inclusive
+        self.end_inclusive = end_inclusive
+
+    def build_query(self, params: List) -> Tuple[str, List]:
+        column = "uuid_timestamp(id)"
+        queries = []
+        if self.start_date is not None:
+            if self.start_inclusive:
+                queries.append(f"{column} >= ${len(params)+1}")
+            else:
+                queries.append(f"{column} > ${len(params)+1}")
+            params.append(self.start_date)
+        if self.end_date is not None:
+            if self.end_inclusive:
+                queries.append(f"{column} <= ${len(params)+1}")
+            else:
+                queries.append(f"{column} < ${len(params)+1}")
+            params.append(self.end_date)
+        return " AND ".join(queries), params         
+
+# %% ../nbs/00_vector.ipynb 10
 class Predicates:
     logical_operators = {
         "AND": "AND",
@@ -137,7 +229,7 @@ class Predicates:
             where_clause = (" "+self.operator+" ").join(where_conditions)
         return where_clause, params
 
-# %% ../nbs/00_vector.ipynb 9
+# %% ../nbs/00_vector.ipynb 11
 class QueryBuilder:
     def __init__(
             self,
@@ -378,7 +470,14 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
         return (where, params)
 
-    def search_query(self, query_embedding: Optional[Union[List[float], np.ndarray]], limit: int = 10, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None, predicates: Optional[Predicates] = None) -> Tuple[str, List]:
+    def search_query(
+            self, 
+            query_embedding: Optional[Union[List[float], np.ndarray]], 
+            limit: int = 10, 
+            filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None, 
+            predicates: Optional[Predicates] = None,
+            uuid_time_filter: Optional[UUIDTimeRange] = None,
+            ) -> Tuple[str, List]:
         """
         Generates a similarity query.
 
@@ -404,6 +503,13 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         if predicates is not None:
             (where_predicates, params) = predicates.build_query(params)
             where_clauses.append(where_predicates)
+
+        if uuid_time_filter is not None:
+            if self.time_partition_interval is None:
+                raise ValueError("""uuid_time_filter is only supported when time_partitioning is enabled.""")
+            
+            (where_time, params) = uuid_time_filter.build_query(params)
+            where_clauses.append(where_time)
         
         if len(where_clauses) > 0:
             where = " AND ".join(where_clauses)
@@ -422,7 +528,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), limit=limit)
         return (query, params)
 
-# %% ../nbs/00_vector.ipynb 12
+# %% ../nbs/00_vector.ipynb 14
 class Async(QueryBuilder):
     def __init__(
             self,
@@ -647,7 +753,9 @@ class Async(QueryBuilder):
                      query_embedding: Optional[List[float]] = None, 
                      limit: int = 10,
                      filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
-                     predicates: Optional[Predicates] = None): 
+                     predicates: Optional[Predicates] = None,
+                     uuid_time_filter: Optional[UUIDTimeRange] = None,
+                     ): 
         """
         Retrieves similar records using a similarity query.
 
@@ -667,11 +775,11 @@ class Async(QueryBuilder):
             List: List of similar records.
         """
         (query, params) = self.builder.search_query(
-            query_embedding, limit, filter, predicates)
+            query_embedding, limit, filter, predicates, uuid_time_filter)
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
-# %% ../nbs/00_vector.ipynb 20
+# %% ../nbs/00_vector.ipynb 22
 import psycopg2.pool
 from contextlib import contextmanager
 import psycopg2.extras
@@ -679,7 +787,7 @@ import pgvector.psycopg2
 import numpy as np
 import re
 
-# %% ../nbs/00_vector.ipynb 21
+# %% ../nbs/00_vector.ipynb 23
 class Sync:
     translated_queries: Dict[str, str] = {}
 
@@ -964,7 +1072,9 @@ class Sync:
     query_embedding: Optional[List[float]] = None, 
     limit: int = 10, 
     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
-    predicates: Optional[Predicates] = None):
+    predicates: Optional[Predicates] = None,
+    uuid_time_filter: Optional[UUIDTimeRange] = None,
+    ):
         """
         Retrieves similar records using a similarity query.
 
@@ -989,7 +1099,7 @@ class Sync:
             query_embedding_np = None
 
         (query, params) = self.builder.search_query(
-            query_embedding_np, limit, filter, predicates)
+            query_embedding_np, limit, filter, predicates, uuid_time_filter)
         query, params = self._translate_to_pyformat(query, params)
         with self.connect() as conn:
             with conn.cursor() as cur:
