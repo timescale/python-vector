@@ -91,6 +91,9 @@ class BaseIndex:
 
 class IvfflatIndex(BaseIndex):
     def __init__(self, num_records: Optional[int] = None, num_lists: Optional[int] = None) -> None:
+        """
+        Pgvector's ivfflat index.
+        """
         self.num_records = num_records
         self.num_lists = num_lists
     
@@ -122,6 +125,9 @@ class IvfflatIndex(BaseIndex):
 
 class HNSWIndex(BaseIndex):
     def __init__(self, m: Optional[int] = None, ef_construction: Optional[int] = None) -> None:
+        """
+        Pgvector's hnsw index.
+        """
         self.m = m
         self.ef_construction = ef_construction
 
@@ -149,6 +155,9 @@ class TimescaleVectorIndex(BaseIndex):
                  max_alpha: Optional[float] = None,
                  pq_vector_length: Optional[int] = None,
                  ) -> None:
+        """
+        Timescale's vector index.
+        """
         self.use_pq = use_pq
         self.num_neighbors = num_neighbors
         self.search_list_size = search_list_size

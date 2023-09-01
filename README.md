@@ -178,7 +178,9 @@ You can create a timescale-vector index on the table with.
 await vec.create_embedding_index(client.TimescaleVectorIndex())
 ```
 
-You can drop the index with:
+Please see
+[`TimescaleVectorIndex`](https://timescale.github.io/python-vector/vector.html#timescalevectorindex)
+documentation for advanced options. the You can drop the index with:
 
 ``` python
 await vec.drop_embedding_index()
@@ -187,8 +189,10 @@ await vec.drop_embedding_index()
 While we recommend the timescale-vector index type, we also have 2 more
 index types availabe:
 
-- The pgvector ivfflat index
-- The pgvector hnsw index
+- The pgvector ivfflat index with
+  [`IvfflatIndex`](https://timescale.github.io/python-vector/vector.html#ivfflatindex)
+- The pgvector hnsw index with
+  [`HNSWIndex`](https://timescale.github.io/python-vector/vector.html#hnswindex)
 
 Usage examples below:
 
