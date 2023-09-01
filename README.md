@@ -78,8 +78,8 @@ Now you can query for similar items:
 await vec.search([1.0, 9.0])
 ```
 
-    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
-     <Record id=UUID('71e70e23-65fd-4555-be30-bc40710654be') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
+    [<Record id=UUID('e5dbaa7c-081b-4131-be18-c81ce47fc864') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
+     <Record id=UUID('2cdb8cbd-5dd7-4555-926a-5efafb4b1cf0') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
 
 You can specify the number of records to return.
 
@@ -87,7 +87,7 @@ You can specify the number of records to return.
 await vec.search([1.0, 9.0], limit=1)
 ```
 
-    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+    [<Record id=UUID('e5dbaa7c-081b-4131-be18-c81ce47fc864') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 You can also specify a filter on the metadata as a simple dictionary
 
@@ -95,7 +95,7 @@ You can also specify a filter on the metadata as a simple dictionary
 await vec.search([1.0, 9.0], limit=1, filter={"action": "jump"})
 ```
 
-    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+    [<Record id=UUID('e5dbaa7c-081b-4131-be18-c81ce47fc864') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 You can also specify a list of filter dictionaries, where an item is
 returned if it matches any dict
@@ -104,8 +104,8 @@ returned if it matches any dict
 await vec.search([1.0, 9.0], limit=2, filter=[{"action": "jump"}, {"animal": "fox"}])
 ```
 
-    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
-     <Record id=UUID('71e70e23-65fd-4555-be30-bc40710654be') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
+    [<Record id=UUID('e5dbaa7c-081b-4131-be18-c81ce47fc864') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
+     <Record id=UUID('2cdb8cbd-5dd7-4555-926a-5efafb4b1cf0') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
 
 You can access the fields as follows
 
@@ -114,7 +114,7 @@ records = await vec.search([1.0, 9.0], limit=1, filter={"action": "jump"})
 records[0][client.SEARCH_RESULT_ID_IDX]
 ```
 
-    UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d')
+    UUID('e5dbaa7c-081b-4131-be18-c81ce47fc864')
 
 ``` python
 records[0][client.SEARCH_RESULT_METADATA_IDX]
@@ -185,8 +185,10 @@ await vec.drop_embedding_index()
 ```
 
 While we recommend the timescale-vector index type, we also have 2 more
-index types availabe: - The pgvector ivfflat index - The pgvector hnsw
-index
+index types availabe:
+
+- The pgvector ivfflat index
+- The pgvector hnsw index
 
 Usage examples below:
 
@@ -218,10 +220,12 @@ similariy-search index less effective.
 
 One approach to solving this is partitioning the data by time and
 creating ANN indexes on each partition individually. Then, during search
-you can: - Step 1: filter our partitions that don’t match the time
-predicate - Step 2: perform the similarity search on all matching
-partitions - Step 3: combine all the results from each partition in step
-2, rerank, and filter out results by time.
+you can:
+
+- Step 1: filter our partitions that don’t match the time predicate
+- Step 2: perform the similarity search on all matching partitions
+- Step 3: combine all the results from each partition in step 2, rerank,
+  and filter out results by time.
 
 Step 1 makes the search a lot more effecient by filtering out whole
 swaths of data in one go.
@@ -232,13 +236,38 @@ each partition when creating the client:
 
 ``` python
 from datetime import timedelta
+from datetime import datetime
 ```
 
 ``` python
-vec = client.Async(service_url, "data_table_with_time_partition", 2, time_partition_interval=timedelta(hours=6))
+vec = client.Async(service_url, "my_data_with_time_partition", 2, time_partition_interval=timedelta(hours=6))
+await vec.create_tables()
+```
 
+Then insert data where the ids use uuid’s v1 and the time component of
+the uuid specifies the time of the embedding. For example, to create an
+embedding for the current time simply do:
+
+``` python
 id = uuid.uuid1()
-vec.upsert([(id, {"key": "val"}, "the brown fox", [1.0, 1.2])])
+await vec.upsert([(id, {"key": "val"}, "the brown fox", [1.0, 1.2])])
+```
+
+To insert data for a specific time in the past, create the uuid using
+our
+[`uuid_from_time`](https://timescale.github.io/python-vector/vector.html#uuid_from_time)
+function
+
+``` python
+specific_datetime = datetime(2018, 8, 10, 15, 30, 0)
+await vec.upsert([(client.uuid_from_time(specific_datetime), {"key": "val"}, "the brown fox", [1.0, 1.2])])
+```
+
+You can then query the data by specifing a `uuid_time_filter` in the
+search call:
+
+``` python
+rec = await vec.search([1.0, 2.0], limit=4, uuid_time_filter=client.UUIDTimeRange(specific_datetime-timedelta(days=7), specific_datetime+timedelta(days=7)))
 ```
 
 ## Development
