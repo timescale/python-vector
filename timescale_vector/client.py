@@ -2,14 +2,14 @@
 
 # %% auto 0
 __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_CONTENTS_IDX', 'SEARCH_RESULT_EMBEDDING_IDX',
-           'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async',
-           'Sync']
+           'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'BaseIndex', 'IvfflatIndex', 'HNSWIndex',
+           'TimescaleVectorIndex', 'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async', 'Sync']
 
 # %% ../nbs/00_vector.ipynb 5
 import asyncpg
 import uuid
 from pgvector.asyncpg import register_vector
-from typing import (List, Optional, Union, Dict, Tuple, Any, Iterable)
+from typing import (List, Optional, Union, Dict, Tuple, Any, Iterable, Callable)
 import json
 import numpy as np
 import math
@@ -73,13 +73,118 @@ def uuid_from_time(time_arg = None, node=None, clock_seq=None):
                              clock_seq_hi_variant, clock_seq_low, node), version=1)
 
 # %% ../nbs/00_vector.ipynb 8
+class BaseIndex:
+    def get_index_method(self, distance_type: str) -> str:
+        index_method = "invalid"
+        if distance_type == "<->":
+            index_method = "vector_l2_ops"
+        elif distance_type == "<#>":
+            index_method = "vector_ip_ops"
+        elif distance_type == "<=>":
+            index_method = "vector_cosine_ops"
+        else:
+            raise ValueError(f"Unknown distance type {distance_type}")
+        return index_method
+
+    def create_index_query(self, table_name_quoted:str, column_name_quoted: str, index_name_quoted: str, distance_type: str, num_records_callback: Callable[[], int]) -> str:
+        raise NotImplementedError()
+
+class IvfflatIndex(BaseIndex):
+    def __init__(self, num_records: Optional[int] = None, num_lists: Optional[int] = None) -> None:
+        self.num_records = num_records
+        self.num_lists = num_lists
+    
+    def get_num_records(self, num_record_callback: Callable[[], int]) -> int:
+        if self.num_records is not None:
+            return self.num_records
+        return num_record_callback()
+
+    def get_num_lists(self, num_records_callback: Callable[[], int]) -> int:
+        if self.num_lists is not None:
+            return self.num_lists
+        
+        num_records = self.get_num_records(num_records_callback)
+        num_lists = num_records / 1000
+        if num_lists < 10:
+            num_lists = 10
+        if num_records > 1000000:
+            num_lists = math.sqrt(num_records)
+        return num_lists
+    
+
+    def create_index_query(self, table_name_quoted:str, column_name_quoted: str, index_name_quoted: str, distance_type: str, num_records_callback: Callable[[], int]) -> str:
+        index_method = self.get_index_method(distance_type)
+        num_lists = self.get_num_lists(num_records_callback)
+
+        return "CREATE INDEX {index_name} ON {table_name} USING ivfflat ({column_name} {index_method}) WITH (lists = {num_lists});"\
+            .format(index_name=index_name_quoted, table_name=table_name_quoted, column_name=column_name_quoted, index_method=index_method, num_lists=num_lists)
+
+
+class HNSWIndex(BaseIndex):
+    def __init__(self, m: Optional[int] = None, ef_construction: Optional[int] = None) -> None:
+        self.m = m
+        self.ef_construction = ef_construction
+
+    def create_index_query(self, table_name_quoted:str, column_name_quoted: str, index_name_quoted: str, distance_type: str, num_records_callback: Callable[[], int]) -> str:
+        index_method = self.get_index_method(distance_type)
+
+        with_clauses = []
+        if self.m is not None:
+            with_clauses.append(f"m = {self.m}")
+        if self.ef_construction is not None:
+            with_clauses.append(f"ef_construction = {self.ef_construction}")
+        
+        with_clause = ""
+        if len(with_clauses) > 0:
+            with_clause = "WITH (" + ", ".join(with_clauses) + ")"
+
+        return "CREATE INDEX {index_name} ON {table_name} USING hnsw ({column_name} {index_method}) {with_clause};"\
+            .format(index_name=index_name_quoted, table_name=table_name_quoted, column_name=column_name_quoted, index_method=index_method, with_clause=with_clause)
+
+class TimescaleVectorIndex(BaseIndex):
+    def __init__(self, 
+                 use_pq: Optional[bool] = None, 
+                 num_neighbors: Optional[int] = None, 
+                 search_list_size: Optional[int] = None, 
+                 max_alpha: Optional[float] = None,
+                 pq_vector_length: Optional[int] = None,
+                 ) -> None:
+        self.use_pq = use_pq
+        self.num_neighbors = num_neighbors
+        self.search_list_size = search_list_size
+        self.max_alpha = max_alpha
+        self.pq_vector_length = pq_vector_length
+
+    def create_index_query(self, table_name_quoted:str, column_name_quoted: str, index_name_quoted: str, distance_type: str, num_records_callback: Callable[[], int]) -> str:
+
+        with_clauses = []
+        if self.use_pq is not None:
+            with_clauses.append(f"use_pq = {self.use_pq}")
+        if self.num_neighbors is not None:
+            with_clauses.append(f"num_neighbors = {self.num_neighbors}")
+        if self.search_list_size is not None:
+            with_clauses.append(f"search_list_size = {self.search_list_size}")
+        if self.max_alpha is not None:
+            with_clauses.append(f"max_alpha = {self.max_alpha}")
+        if self.pq_vector_length is not None:
+            with_clauses.append(f"pq_vector_length = {self.pq_vector_length}")
+        
+        with_clause = ""
+        if len(with_clauses) > 0:
+            with_clause = "WITH (" + ", ".join(with_clauses) + ")"
+
+        return "CREATE INDEX {index_name} ON {table_name} USING tsv ({column_name}) {with_clause};"\
+            .format(index_name=index_name_quoted, table_name=table_name_quoted, column_name=column_name_quoted, with_clause=with_clause)
+
+
+# %% ../nbs/00_vector.ipynb 10
 SEARCH_RESULT_ID_IDX = 0
 SEARCH_RESULT_METADATA_IDX = 1
 SEARCH_RESULT_CONTENTS_IDX = 2
 SEARCH_RESULT_EMBEDDING_IDX = 3
 SEARCH_RESULT_DISTANCE_IDX = 4
 
-# %% ../nbs/00_vector.ipynb 9
+# %% ../nbs/00_vector.ipynb 11
 class UUIDTimeRange:
     def __init__(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, start_inclusive=True, end_inclusive=False):
         """
@@ -114,7 +219,7 @@ class UUIDTimeRange:
             params.append(self.end_date)
         return " AND ".join(queries), params         
 
-# %% ../nbs/00_vector.ipynb 10
+# %% ../nbs/00_vector.ipynb 12
 class Predicates:
     logical_operators = {
         "AND": "AND",
@@ -230,7 +335,7 @@ class Predicates:
             where_clause = (" "+self.operator+" ").join(where_conditions)
         return where_clause, params
 
-# %% ../nbs/00_vector.ipynb 11
+# %% ../nbs/00_vector.ipynb 13
 class QueryBuilder:
     def __init__(
             self,
@@ -366,6 +471,7 @@ class QueryBuilder:
                 )
         return '''
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS timescaledb_vector;
 
 
 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -416,40 +522,26 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         and the number of currently used connections. This heuristic leaves 4 connections in reserve.
         """
         return "SELECT greatest(1, ((SELECT setting::int FROM pg_settings WHERE name='max_connections')-(SELECT count(*) FROM pg_stat_activity) - 4)::int)"
-
-    def create_ivfflat_index_query(self, num_records):
+    
+    def create_embedding_index_query(self, index: BaseIndex, num_records_callback: Callable[[], int]) -> str:
         """
-        Generates an ivfflat index creation query.
+        Generates an embedding index creation query.
 
         Parameters
         ----------
-        num_records
-            The number of records in the table.
+        index
+            The index to create.
+        num_records_callback
+            A callback function to get the number of records in the table.
 
         Returns
         -------
             str: The index creation query.
         """
         column_name = "embedding"
-
-        index_method = "invalid"
-        if self.distance_type == "<->":
-            index_method = "vector_l2_ops"
-        elif self.distance_type == "<#>":
-            index_method = "vector_ip_ops"
-        elif self.distance_type == "<=>":
-            index_method = "vector_cosine_ops"
-        else:
-            raise ValueError(f"unrecognized operator {query_operator}")
-
-        num_lists = num_records / 1000
-        if num_lists < 10:
-            num_lists = 10
-        if num_records > 1000000:
-            num_lists = math.sqrt(num_records)
-
-        return "CREATE INDEX {index_name} ON {table_name} USING ivfflat ({column_name} {index_method}) WITH (lists = {num_lists});"\
-            .format(index_name=self._get_embedding_index_name(), table_name=self._quote_ident(self.table_name), column_name=self._quote_ident(column_name), index_method=index_method, num_lists=num_lists)
+        index_name = self._get_embedding_index_name()
+        query = index.create_index_query(self._quote_ident(self.table_name), self._quote_ident(column_name), index_name, self.distance_type, num_records_callback)
+        return query
 
     def _where_clause_for_filter(self, params: List, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]]) -> Tuple[str, List]:
         if filter == None:
@@ -529,7 +621,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), limit=limit)
         return (query, params)
 
-# %% ../nbs/00_vector.ipynb 14
+# %% ../nbs/00_vector.ipynb 16
 class Async(QueryBuilder):
     def __init__(
             self,
@@ -731,22 +823,23 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def create_ivfflat_index(self, num_records=None):
+    async def create_embedding_index(self, index: BaseIndex):
         """
-        Creates an ivfflat index for the table.
+        Creates an index for the table.
 
         Parameters
         ----------
-        num_records : int, optional
-            The number of records. If None, it's calculated. Default is None.
+        index
+            The index to create.
 
         Returns
         --------
             None
         """
-        if num_records == None:
-            num_records = await self._get_approx_count()
-        query = self.builder.create_ivfflat_index_query(num_records)
+        #todo: can we make geting the records lazy?
+        num_records = await self._get_approx_count()
+        query = self.builder.create_embedding_index_query(index, lambda: num_records)
+        
         async with await self.connect() as pool:
             await pool.execute(query)
 
@@ -780,7 +873,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
-# %% ../nbs/00_vector.ipynb 22
+# %% ../nbs/00_vector.ipynb 24
 import psycopg2.pool
 from contextlib import contextmanager
 import psycopg2.extras
@@ -788,7 +881,7 @@ import pgvector.psycopg2
 import numpy as np
 import re
 
-# %% ../nbs/00_vector.ipynb 23
+# %% ../nbs/00_vector.ipynb 25
 class Sync:
     translated_queries: Dict[str, str] = {}
 
@@ -1048,23 +1141,21 @@ class Sync:
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
-
-    def create_ivfflat_index(self, num_records=None):
+    
+    def create_embedding_index(self, index: BaseIndex):
         """
-        Creates an ivfflat index for the table.
+        Creates an index on the embedding for the table.
 
         Parameters
         ----------
-        num_records
-            The number of records. If None, it's calculated. Default is None.
+        index
+            The index to create.
 
         Returns
-        -------
+        --------
             None
         """
-        if num_records == None:
-            num_records = self._get_approx_count()
-        query = self.builder.create_ivfflat_index_query(num_records)
+        query = self.builder.create_embedding_index_query(index, lambda: self._get_approx_count())    
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
