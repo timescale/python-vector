@@ -78,8 +78,8 @@ Now you can query for similar items:
 await vec.search([1.0, 9.0])
 ```
 
-    [<Record id=UUID('9b567b36-209e-4240-aa93-f8e7e74277cd') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
-     <Record id=UUID('2d49fd73-3db1-4061-81f3-a4ed7529eb61') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
+    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
+     <Record id=UUID('71e70e23-65fd-4555-be30-bc40710654be') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
 
 You can specify the number of records to return.
 
@@ -87,7 +87,7 @@ You can specify the number of records to return.
 await vec.search([1.0, 9.0], limit=1)
 ```
 
-    [<Record id=UUID('9b567b36-209e-4240-aa93-f8e7e74277cd') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 You can also specify a filter on the metadata as a simple dictionary
 
@@ -95,7 +95,7 @@ You can also specify a filter on the metadata as a simple dictionary
 await vec.search([1.0, 9.0], limit=1, filter={"action": "jump"})
 ```
 
-    [<Record id=UUID('9b567b36-209e-4240-aa93-f8e7e74277cd') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
+    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>]
 
 You can also specify a list of filter dictionaries, where an item is
 returned if it matches any dict
@@ -104,8 +104,8 @@ returned if it matches any dict
 await vec.search([1.0, 9.0], limit=2, filter=[{"action": "jump"}, {"animal": "fox"}])
 ```
 
-    [<Record id=UUID('9b567b36-209e-4240-aa93-f8e7e74277cd') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
-     <Record id=UUID('2d49fd73-3db1-4061-81f3-a4ed7529eb61') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
+    [<Record id=UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d') metadata={'action': 'jump', 'animal': 'fox'} contents='jumped over the' embedding=array([ 1. , 10.8], dtype=float32) distance=0.00016793422934946456>,
+     <Record id=UUID('71e70e23-65fd-4555-be30-bc40710654be') metadata={'animal': 'fox'} contents='the brown fox' embedding=array([1. , 1.3], dtype=float32) distance=0.14489260377438218>]
 
 You can access the fields as follows
 
@@ -114,7 +114,7 @@ records = await vec.search([1.0, 9.0], limit=1, filter={"action": "jump"})
 records[0][client.SEARCH_RESULT_ID_IDX]
 ```
 
-    UUID('9b567b36-209e-4240-aa93-f8e7e74277cd')
+    UUID('1c35a4c3-8a04-4d3e-b74d-511585db052d')
 
 ``` python
 records[0][client.SEARCH_RESULT_METADATA_IDX]
@@ -172,25 +172,74 @@ By default, we setup indexes to query your data by the uuid and the
 metadata.
 
 If you have many rows, you also need to setup an index on the embedding.
-You can create an ivfflat index with the following command after the
-table has been populated.
+You can create a timescale-vector index on the table with.
 
 ``` python
-await vec.create_embedding_index(client.IvfflatIndex())
+await vec.create_embedding_index(client.TimescaleVectorIndex())
 ```
 
-Please note it is very important to do this only after you have data in
-the table.
-
-You can drop the index with the following command.
+You can drop the index with:
 
 ``` python
 await vec.drop_embedding_index()
 ```
 
+While we recommend the timescale-vector index type, we also have 2 more
+index types availabe: - The pgvector ivfflat index - The pgvector hnsw
+index
+
+Usage examples below:
+
+``` python
+await vec.create_embedding_index(client.IvfflatIndex())
+await vec.drop_embedding_index()
+await vec.create_embedding_index(client.HNSWIndex())
+await vec.drop_embedding_index()
+```
+
+Please note it is very important create the ivfflat index only after you
+have data in the table.
+
 Please note the community is actively working on new indexing methods
 for embeddings. As they become available, we will add them to our client
 as well.
+
+### Time-partitioning
+
+In many use-cases where you have many embeddings time is an important
+component associated with the embeddings. For example, when embedding
+news stories you often search by time as well as similarity
+(e.g. stories related to bitcoin in the past week, or stories about
+Clinton in November 2016).
+
+Yet, traditionally, searching by two components “similarity” and “time”
+is challenging approximate nearest neigbor (ANN) indexes and makes the
+similariy-search index less effective.
+
+One approach to solving this is partitioning the data by time and
+creating ANN indexes on each partition individually. Then, during search
+you can: - Step 1: filter our partitions that don’t match the time
+predicate - Step 2: perform the similarity search on all matching
+partitions - Step 3: combine all the results from each partition in step
+2, rerank, and filter out results by time.
+
+Step 1 makes the search a lot more effecient by filtering out whole
+swaths of data in one go.
+
+Timescale-vector supports time partitioning using TimescaleDB’s
+hypertables. To use this feature, simply indicate the length in time for
+each partition when creating the client:
+
+``` python
+from datetime import timedelta
+```
+
+``` python
+vec = client.Async(service_url, "data_table_with_time_partition", 2, time_partition_interval=timedelta(hours=6))
+
+id = uuid.uuid1()
+vec.upsert([(id, {"key": "val"}, "the brown fox", [1.0, 1.2])])
+```
 
 ## Development
 

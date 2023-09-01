@@ -464,7 +464,11 @@ class QueryBuilder:
                 IMMUTABLE PARALLEL SAFE
                 RETURNS NULL ON NULL INPUT;
 
-                SELECT create_hypertable('{table_name}', 'id', time_partitioning_func=>'public.uuid_timestamp', chunk_time_interval => '{chunk_time_interval} seconds'::interval);
+                SELECT create_hypertable('{table_name}', 
+                    'id', 
+                    if_not_exists=> true, 
+                    time_partitioning_func=>'public.uuid_timestamp', 
+                    chunk_time_interval => '{chunk_time_interval} seconds'::interval);
             '''.format(
                 table_name=self._quote_ident(self.table_name), 
                 chunk_time_interval=str(self.time_partition_interval.total_seconds()),
