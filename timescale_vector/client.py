@@ -484,7 +484,7 @@ class QueryBuilder:
                 )
         return '''
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS timescaledb_vector;
+CREATE EXTENSION IF NOT EXISTS timescale_vector;
 
 
 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -611,8 +611,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             where_clauses.append(where_predicates)
 
         if uuid_time_filter is not None:
-            if self.time_partition_interval is None:
-                raise ValueError("""uuid_time_filter is only supported when time_partitioning is enabled.""")
+            #if self.time_partition_interval is None:
+                #raise ValueError("""uuid_time_filter is only supported when time_partitioning is enabled.""")
             
             (where_time, params) = uuid_time_filter.build_query(params)
             where_clauses.append(where_time)
