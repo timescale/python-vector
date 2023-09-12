@@ -16,6 +16,7 @@ import math
 import random
 from datetime import timedelta
 from datetime import datetime
+from datetime import timezone
 import calendar
 
 # %% ../nbs/00_vector.ipynb 6
@@ -44,6 +45,10 @@ def uuid_from_time(time_arg = None, node=None, clock_seq=None):
     if time_arg is None:
         return uuid.uuid1(node, clock_seq)
     if hasattr(time_arg, 'utctimetuple'):
+        # this is different from the Cassandra version, we assume that a naive datetime is in system time and convert it to UTC
+        # we do this because naive datetimes are interpreted as timestamps (without timezone) in postgres
+        if time_arg.tzinfo is None:
+            time_arg = time_arg.astimezone(timezone.utc)
         seconds = int(calendar.timegm(time_arg.utctimetuple()))
         microseconds = (seconds * 1e6) + time_arg.time().microsecond
     else:
@@ -195,9 +200,11 @@ SEARCH_RESULT_DISTANCE_IDX = 4
 
 # %% ../nbs/00_vector.ipynb 11
 class UUIDTimeRange:
-    def __init__(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, start_inclusive=True, end_inclusive=False):
+    def __init__(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, time_delta: Optional[timedelta] = None, start_inclusive=True, end_inclusive=False):
         """
-         A UUIDTimeRange is a time range predicate on the UUID Version 1 timestamps.
+         A UUIDTimeRange is a time range predicate on the UUID Version 1 timestamps. 
+         
+         Note that naive datetime objects are interpreted as local time on the python client side and converted to UTC before being sent to the database.
         """
         if start_date is not None and end_date is not None:
             if start_date > end_date:
@@ -205,11 +212,31 @@ class UUIDTimeRange:
         
         if start_date is None and end_date is None:
             raise Exception("start_date and end_date cannot both be None")
+        
+        if start_date is not None and start_date.tzinfo is None:
+            start_date = start_date.astimezone(timezone.utc)
+
+        if end_date is not None and end_date.tzinfo is None:
+            end_date = end_date.astimezone(timezone.utc)
+        
+        if time_delta is not None:
+            if end_date is None:
+                end_date = start_date + time_delta
+            elif start_date is None:
+                start_date = end_date - time_delta
+            else:
+                raise Exception("time_delta, start_date and end_date cannot all be specified at the same time")
 
         self.start_date = start_date
         self.end_date = end_date
         self.start_inclusive = start_inclusive
         self.end_inclusive = end_inclusive
+    
+    def __str__(self):
+        start_str = f"[{self.start_date}" if self.start_inclusive else f"({self.start_date}"
+        end_str = f"{self.end_date}]" if self.end_inclusive else f"{self.end_date})"
+        
+        return f"UUIDTimeRange {start_str}, {end_str}"
 
     def build_query(self, params: List) -> Tuple[str, List]:
         column = "uuid_timestamp(id)"
