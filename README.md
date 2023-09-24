@@ -4,12 +4,16 @@
 
 PostgreSQL++ for AI Applications.
 
-- [Documentation and
-  Tutorials](https://timescale.github.io/python-vector/).
 - [Signup for Timescale
   Vector](https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&utm_source=github&utm_medium=direct):
   Get 90 days free to try Timescale Vector on the Timescale cloud data
   platform. There is no self-managed version at this time.
+- [Documentation](https://timescale.github.io/python-vector/): Learn the
+  key features of Timescale Vector and how to use them.
+- [Getting Started
+  Tutorial](https://timescale.github.io/python-vector/tsv_python_getting_started_tutorial.html):
+  Learn how to use Timescale Vector for semantic search on a real world
+  dataset.
 - [Learn
   more](https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/?utm_campaign=vectorlaunch&utm_source=github&utm_medium=direct):
   Learn more about Timescale Vector, how it works and why we built it.
