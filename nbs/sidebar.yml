@@ -3,3 +3,4 @@ website:
     contents:
       - index.ipynb
       - 00_vector.ipynb
+      - tsv_python_getting_started_tutorial.ipynb
