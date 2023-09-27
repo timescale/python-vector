@@ -18,6 +18,12 @@ PostgreSQL++ for AI Applications.
   more](https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/?utm_campaign=vectorlaunch&utm_source=github&utm_medium=direct):
   Learn more about Timescale Vector, how it works and why we built it.
 
+If you prefer to use an LLM development or data framework, see Timescale
+Vector’s integrations with
+[LangChain](https://python.langchain.com/docs/integrations/vectorstores/timescalevector)
+and
+[LlamaIndex](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/Timescalevector.html)
+
 ## Install
 
 ``` sh
