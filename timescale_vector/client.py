@@ -379,7 +379,8 @@ class QueryBuilder:
             num_dimensions: int,
             distance_type: str,
             id_type: str,
-            time_partition_interval: Optional[timedelta]) -> None:
+            time_partition_interval: Optional[timedelta],
+            infer_filters: bool) -> None:
         """
         Initializes a base Vector object to generate queries for vector clients.
 
@@ -411,6 +412,7 @@ class QueryBuilder:
 
         self.id_type = id_type.lower()
         self.time_partition_interval = time_partition_interval
+        self.infer_filters = infer_filters
 
     def _quote_ident(self, ident):
         """
@@ -602,6 +604,36 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             raise ValueError("Unknown filter type: {filter_type}".format(filter_type=type(filter)))
 
         return (where, params)
+    
+    def _parse_datetime(self, input_datetime):
+        """
+        Parse a datetime object or string representation of a datetime.
+
+        Args:
+            input_datetime (datetime or str): Input datetime or string.
+
+        Returns:
+            datetime: Parsed datetime object.
+
+        Raises:
+            ValueError: If the input cannot be parsed as a datetime.
+        """
+        if input_datetime is None:
+            return None
+        
+        if isinstance(input_datetime, datetime):
+            # If input is already a datetime object, return it as is
+            return input_datetime
+
+        if isinstance(input_datetime, str):
+            try:
+                # Attempt to parse the input string into a datetime
+                return datetime.fromisoformat(input_datetime)
+            except ValueError:
+                raise ValueError("Invalid datetime string format")
+
+        raise ValueError("Input must be a datetime object or string")
+
 
     def search_query(
             self, 
@@ -627,6 +659,20 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         else:
             distance = "-1.0"
             order_by_clause = ""
+
+        if self.infer_filters:
+            if uuid_time_filter is None and isinstance(filter, dict):
+                if "__start_date" in filter or "__end_date" in filter:
+                    start_date = self._parse_datetime(filter.get("__start_date"))
+                    end_date = self._parse_datetime(filter.get("__end_date"))
+                    
+                    uuid_time_filter = UUIDTimeRange(start_date, end_date)
+                    
+                    if start_date is not None:
+                        del filter["__start_date"]
+                    if end_date is not None:
+                        del filter["__end_date"]
+
 
         where_clauses = []
         if filter is not None:
@@ -671,7 +717,8 @@ class Async(QueryBuilder):
             distance_type: str = 'cosine',
             id_type='UUID',
             time_partition_interval: Optional[timedelta] = None,
-            max_db_connections: Optional[int] = None
+            max_db_connections: Optional[int] = None,
+            infer_filters: bool = True,
             ) -> None:
         """
         Initializes a async client for storing vector data.
@@ -690,7 +737,7 @@ class Async(QueryBuilder):
             The type of the id column. Can be either 'UUID' or 'TEXT'.
         """
         self.builder = QueryBuilder(
-            table_name, num_dimensions, distance_type, id_type, time_partition_interval)
+            table_name, num_dimensions, distance_type, id_type, time_partition_interval, infer_filters)
         self.service_url = service_url
         self.pool = None
         self.max_db_connections = max_db_connections
@@ -933,7 +980,8 @@ class Sync:
             distance_type: str = 'cosine',
             id_type='UUID',
             time_partition_interval: Optional[timedelta] = None,
-            max_db_connections: Optional[int] = None
+            max_db_connections: Optional[int] = None,
+            infer_filters: bool = True,
             ) -> None:
         """
         Initializes a sync client for storing vector data.
@@ -952,7 +1000,7 @@ class Sync:
             The type of the primary id column. Can be either 'UUID' or 'TEXT'.
         """
         self.builder = QueryBuilder(
-            table_name, num_dimensions, distance_type, id_type, time_partition_interval)
+            table_name, num_dimensions, distance_type, id_type, time_partition_interval, infer_filters)
         self.service_url = service_url
         self.pool = None
         self.max_db_connections = max_db_connections
