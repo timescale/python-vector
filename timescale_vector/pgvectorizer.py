@@ -45,7 +45,7 @@ class Vectorize:
         self.trigger_name_fn = client.QueryBuilder._quote_ident(trigger_name_fn) 
 
 
-    def register(self):
+    def register(self):        
         with psycopg2.connect(self.service_url) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(f"""
@@ -54,9 +54,7 @@ class Vectorize:
                 table_exists = cursor.fetchone()[0]
                 if table_exists:
                     return
-        
-        with psycopg2.connect(self.service_url) as conn:
-            with conn.cursor() as cursor:
+                
                 cursor.execute(f"""
                     CREATE TABLE {self.schema_name}.{self.work_queue_table_name} (
                         id int
@@ -83,12 +81,17 @@ class Vectorize:
                     INSERT INTO {self.schema_name}.{self.work_queue_table_name} SELECT {self.id_column_name} FROM {self.schema_name}.{self.table_name};
                 """)
 
-    def process(self, embed_and_write_cb, batch_size:int=10, advisory_prefix=47859, autoregister=True):
+    def process(self, embed_and_write_cb, batch_size:int=10, autoregister=True):
         if autoregister:
             self.register()
             
         with psycopg2.connect(self.service_url) as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+                cursor.execute(f"""
+                    SELECT to_regclass('{self.schema_name}.{self.work_queue_table_name}')::oid; 
+                """)
+                table_oid = cursor.fetchone()[0]
+            
                 cursor.execute(f"""
                     WITH selected_rows AS (
                         SELECT id
@@ -97,7 +100,7 @@ class Vectorize:
                         FOR UPDATE SKIP LOCKED
                     ), 
                     locked_items AS (
-                        SELECT id, pg_try_advisory_xact_lock({int(advisory_prefix)}, id) AS locked
+                        SELECT id, pg_try_advisory_xact_lock({int(table_oid)}, id) AS locked
                         FROM (SELECT DISTINCT id FROM selected_rows ORDER BY id) as ids
                     ),
                     deleted_rows AS (
