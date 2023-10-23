@@ -4,7 +4,7 @@
 
 ## 0.0.2
 
-Add ability to info start and end date from filters
+Add ability to infer start and end date from filters
 
 
 ## 0.0.1
