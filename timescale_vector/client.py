@@ -414,7 +414,8 @@ class QueryBuilder:
         self.time_partition_interval = time_partition_interval
         self.infer_filters = infer_filters
 
-    def _quote_ident(self, ident):
+    @staticmethod
+    def _quote_ident(ident):
         """
         Quotes an identifier to prevent SQL injection.
 
