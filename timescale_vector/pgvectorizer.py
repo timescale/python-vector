@@ -60,6 +60,8 @@ class Vectorize:
                         id int
                     );
 
+                    CREATE INDEX ON {self.schema_name}.{self.work_queue_table_name}(id);
+
                     CREATE OR REPLACE FUNCTION {self.schema_name}.{self.trigger_name_fn}() RETURNS TRIGGER LANGUAGE PLPGSQL AS $$ 
                     BEGIN 
                         IF (TG_OP = 'DELETE') THEN
