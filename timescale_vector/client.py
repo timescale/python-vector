@@ -351,15 +351,25 @@ class Predicates:
                     operator = self.operators_mapping[operator]
                 else:
                     raise ValueError("Invalid clause format")
-            
+
+                index = len(params)+1
+                param_name = f"${index}"
+
+                if field == '__uuid_timestamp':
+                    #convert str to timestamp in the database, it's better at it than python
+                    if isinstance(value, str):
+                        where_conditions.append(f"uuid_timestamp(id) {operator} ({param_name}::text)::timestamptz")
+                    else:
+                        where_conditions.append(f"uuid_timestamp(id) {operator} {param_name}")
+                    params.append(value)
+                    continue
+
                 field_cast = ''
                 if isinstance(value, int):
                     field_cast = '::int'
                 elif isinstance(value, float):
                     field_cast = '::numeric'  
 
-                index = len(params)+1
-                param_name = f"${index}"
                 where_conditions.append(f"(metadata->>'{field}'){field_cast} {operator} {param_name}")
                 params.append(value) 
 
