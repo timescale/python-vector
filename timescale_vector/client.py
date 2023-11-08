@@ -200,12 +200,46 @@ SEARCH_RESULT_DISTANCE_IDX = 4
 
 # %% ../nbs/00_vector.ipynb 11
 class UUIDTimeRange:
-    def __init__(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, time_delta: Optional[timedelta] = None, start_inclusive=True, end_inclusive=False):
+    
+    @staticmethod
+    def _parse_datetime(input_datetime: Union[datetime, str]):
+        """
+        Parse a datetime object or string representation of a datetime.
+
+        Args:
+            input_datetime (datetime or str): Input datetime or string.
+
+        Returns:
+            datetime: Parsed datetime object.
+
+        Raises:
+            ValueError: If the input cannot be parsed as a datetime.
+        """
+        if input_datetime is None or input_datetime == "None":
+            return None
+        
+        if isinstance(input_datetime, datetime):
+            # If input is already a datetime object, return it as is
+            return input_datetime
+
+        if isinstance(input_datetime, str):
+            try:
+                # Attempt to parse the input string into a datetime
+                return datetime.fromisoformat(input_datetime)
+            except ValueError:
+                raise ValueError("Invalid datetime string format: {}".format(input_datetime))
+
+        raise ValueError("Input must be a datetime object or string")
+
+    def __init__(self, start_date: Optional[Union[datetime, str]] = None, end_date: Optional[Union[datetime, str]] = None, time_delta: Optional[timedelta] = None, start_inclusive=True, end_inclusive=False):
         """
          A UUIDTimeRange is a time range predicate on the UUID Version 1 timestamps. 
          
          Note that naive datetime objects are interpreted as local time on the python client side and converted to UTC before being sent to the database.
         """
+        start_date = UUIDTimeRange._parse_datetime(start_date)
+        end_date = UUIDTimeRange._parse_datetime(end_date)
+
         if start_date is not None and end_date is not None:
             if start_date > end_date:
                 raise Exception("start_date must be before end_date")
@@ -615,36 +649,6 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             raise ValueError("Unknown filter type: {filter_type}".format(filter_type=type(filter)))
 
         return (where, params)
-    
-    def _parse_datetime(self, input_datetime):
-        """
-        Parse a datetime object or string representation of a datetime.
-
-        Args:
-            input_datetime (datetime or str): Input datetime or string.
-
-        Returns:
-            datetime: Parsed datetime object.
-
-        Raises:
-            ValueError: If the input cannot be parsed as a datetime.
-        """
-        if input_datetime is None:
-            return None
-        
-        if isinstance(input_datetime, datetime):
-            # If input is already a datetime object, return it as is
-            return input_datetime
-
-        if isinstance(input_datetime, str):
-            try:
-                # Attempt to parse the input string into a datetime
-                return datetime.fromisoformat(input_datetime)
-            except ValueError:
-                raise ValueError("Invalid datetime string format")
-
-        raise ValueError("Input must be a datetime object or string")
-
 
     def search_query(
             self, 
@@ -674,8 +678,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         if self.infer_filters:
             if uuid_time_filter is None and isinstance(filter, dict):
                 if "__start_date" in filter or "__end_date" in filter:
-                    start_date = self._parse_datetime(filter.get("__start_date"))
-                    end_date = self._parse_datetime(filter.get("__end_date"))
+                    start_date = UUIDTimeRange._parse_datetime(filter.get("__start_date"))
+                    end_date = UUIDTimeRange._parse_datetime(filter.get("__end_date"))
                     
                     uuid_time_filter = UUIDTimeRange(start_date, end_date)
                     
