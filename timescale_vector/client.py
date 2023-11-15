@@ -1049,7 +1049,7 @@ class Sync:
                 self.max_db_connections = self.default_max_db_connections()
 
             self.pool = psycopg2.pool.SimpleConnectionPool(
-                1, self.max_db_connections, dsn=self.service_url)
+                1, self.max_db_connections, dsn=self.service_url, cursor_factory=psycopg2.extras.DictCursor)
 
         connection = self.pool.getconn()
         pgvector.psycopg2.register_vector(connection)
