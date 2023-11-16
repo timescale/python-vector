@@ -307,7 +307,9 @@ class Predicates:
         "!=": "<>",
     }
 
-    def __init__(self, *clauses: Union['Predicates', Tuple[str, str], Tuple[str, str, str]], operator: str = 'AND'):
+    PredicateValue = Union[str, int, float]
+
+    def __init__(self, *clauses: Union['Predicates', Tuple[str, PredicateValue], Tuple[str, str, PredicateValue], str, PredicateValue], operator: str = 'AND'):
         """
         Predicates class defines predicates on the object metadata. Predicates can be combined using logical operators (&, |, and ~).
 
@@ -321,9 +323,14 @@ class Predicates:
         if operator not in self.logical_operators: 
             raise ValueError(f"invalid operator: {operator}")
         self.operator = operator
-        self.clauses = list(clauses)
+        if isinstance(clauses[0], str):
+            if len(clauses) != 3 or not (isinstance(clauses[1], str) and isinstance(clauses[2], self.PredicateValue)):
+                raise ValueError("Invalid clause format: {clauses}")
+            self.clauses = [(clauses[0], clauses[1], clauses[2])]
+        else:
+            self.clauses = list(clauses)
 
-    def add_clause(self, *clause: Union['Predicates', Tuple[str, str], Tuple[str, str, str]]):
+    def add_clause(self, *clause: Union['Predicates', Tuple[str, PredicateValue], Tuple[str, str, PredicateValue], str, PredicateValue]):
         """
         Add a clause to the predicates object.
 
@@ -332,7 +339,12 @@ class Predicates:
         clause: 'Predicates' or Tuple[str, str] or Tuple[str, str, str]
             Predicate clause. Can be either another Predicates object or a tuple of the form (field, operator, value) or (field, value).
         """
-        self.clauses.extend(list(clause))
+        if isinstance(clause[0], str):
+            if len(clause) != 3 or not (isinstance(clause[1], str) and isinstance(clause[2], self.PredicateValue)):
+                raise ValueError("Invalid clause format: {clauses}")
+            self.clauses.append((clause[0], clause[1], clause[2]))
+        else:
+            self.clauses.extend(list(clause))
         
     def __and__(self, other):
         new_predicates = Predicates(self, other, operator='AND')
