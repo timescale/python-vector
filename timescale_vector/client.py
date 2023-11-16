@@ -171,6 +171,8 @@ class TimescaleVectorIndex(BaseIndex):
         self.pq_vector_length = pq_vector_length
 
     def create_index_query(self, table_name_quoted:str, column_name_quoted: str, index_name_quoted: str, distance_type: str, num_records_callback: Callable[[], int]) -> str:
+        if distance_type != "<=>":
+            raise ValueError(f"Timescale's vector index only supports cosine distance, but distance_type was {distance_type}")
 
         with_clauses = []
         if self.use_pq is not None:
@@ -328,7 +330,7 @@ class Predicates:
         "!=": "<>",
     }
 
-    PredicateValue = Union[str, int, float]
+    PredicateValue = Union[str, int, float, datetime]
 
     def __init__(self, *clauses: Union['Predicates', Tuple[str, PredicateValue], Tuple[str, str, PredicateValue], str, PredicateValue], operator: str = 'AND'):
         """
@@ -435,7 +437,9 @@ class Predicates:
                 if isinstance(value, int):
                     field_cast = '::int'
                 elif isinstance(value, float):
-                    field_cast = '::numeric'  
+                    field_cast = '::numeric'
+                elif isinstance(value, datetime):
+                    field_cast = '::timestamptz'   
 
                 where_conditions.append(f"(metadata->>'{field}'){field_cast} {operator} {param_name}")
                 params.append(value) 
