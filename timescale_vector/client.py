@@ -3,7 +3,8 @@
 # %% auto 0
 __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_CONTENTS_IDX', 'SEARCH_RESULT_EMBEDDING_IDX',
            'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'BaseIndex', 'IvfflatIndex', 'HNSWIndex',
-           'TimescaleVectorIndex', 'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async', 'Sync']
+           'TimescaleVectorIndex', 'QueryParams', 'TimescaleVectorIndexParams', 'IvfflatIndexParams', 'HNSWIndexParams',
+           'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async', 'Sync']
 
 # %% ../nbs/00_vector.ipynb 5
 import asyncpg
@@ -192,13 +193,33 @@ class TimescaleVectorIndex(BaseIndex):
 
 
 # %% ../nbs/00_vector.ipynb 10
+class QueryParams:
+    def __init__(self, params: dict[str, Any]) -> None:
+        self.params = params
+    
+    def get_statements(self) -> List[str]:
+        return ["SET LOCAL " + key + " = " + str(value) for key, value in self.params.items()]
+
+class TimescaleVectorIndexParams(QueryParams):
+    def __init__(self, search_list_size: int) -> None:
+        super().__init__({"tsv.query_search_list_size": search_list_size})
+
+class IvfflatIndexParams(QueryParams):
+    def __init__(self, probes: int) -> None:
+        super().__init__({"ivfflat.probes": probes})
+
+class HNSWIndexParams(QueryParams):
+    def __init__(self, ef_search: int) -> None:
+        super().__init__({"hnsw.ef_search": ef_search})
+
+# %% ../nbs/00_vector.ipynb 12
 SEARCH_RESULT_ID_IDX = 0
 SEARCH_RESULT_METADATA_IDX = 1
 SEARCH_RESULT_CONTENTS_IDX = 2
 SEARCH_RESULT_EMBEDDING_IDX = 3
 SEARCH_RESULT_DISTANCE_IDX = 4
 
-# %% ../nbs/00_vector.ipynb 11
+# %% ../nbs/00_vector.ipynb 13
 class UUIDTimeRange:
     
     @staticmethod
@@ -289,7 +310,7 @@ class UUIDTimeRange:
             params.append(self.end_date)
         return " AND ".join(queries), params         
 
-# %% ../nbs/00_vector.ipynb 12
+# %% ../nbs/00_vector.ipynb 14
 class Predicates:
     logical_operators = {
         "AND": "AND",
@@ -325,7 +346,7 @@ class Predicates:
         self.operator = operator
         if isinstance(clauses[0], str):
             if len(clauses) != 3 or not (isinstance(clauses[1], str) and isinstance(clauses[2], self.PredicateValue)):
-                raise ValueError("Invalid clause format: {clauses}")
+                raise ValueError(f"Invalid clause format: {clauses}")
             self.clauses = [(clauses[0], clauses[1], clauses[2])]
         else:
             self.clauses = list(clauses)
@@ -341,7 +362,7 @@ class Predicates:
         """
         if isinstance(clause[0], str):
             if len(clause) != 3 or not (isinstance(clause[1], str) and isinstance(clause[2], self.PredicateValue)):
-                raise ValueError("Invalid clause format: {clauses}")
+                raise ValueError(f"Invalid clause format: {clause}")
             self.clauses.append((clause[0], clause[1], clause[2]))
         else:
             self.clauses.extend(list(clause))
@@ -427,7 +448,7 @@ class Predicates:
             where_clause = (" "+self.operator+" ").join(where_conditions)
         return where_clause, params
 
-# %% ../nbs/00_vector.ipynb 13
+# %% ../nbs/00_vector.ipynb 15
 class QueryBuilder:
     def __init__(
             self,
@@ -734,7 +755,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), limit=limit)
         return (query, params)
 
-# %% ../nbs/00_vector.ipynb 16
+# %% ../nbs/00_vector.ipynb 18
 class Async(QueryBuilder):
     def __init__(
             self,
@@ -963,6 +984,7 @@ class Async(QueryBuilder):
                      filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
                      predicates: Optional[Predicates] = None,
                      uuid_time_filter: Optional[UUIDTimeRange] = None,
+                     query_params: Optional[QueryParams] = None
                      ): 
         """
         Retrieves similar records using a similarity query.
@@ -984,10 +1006,19 @@ class Async(QueryBuilder):
         """
         (query, params) = self.builder.search_query(
             query_embedding, limit, filter, predicates, uuid_time_filter)
-        async with await self.connect() as pool:
-            return await pool.fetch(query, *params)
+        if query_params is not None:
+            async with await self.connect() as pool:
+                async with pool.transaction():
+                    #Looks like there is no way to pipeline this: https://github.com/MagicStack/asyncpg/issues/588
+                    statements = query_params.get_statements()
+                    for statement in statements:
+                        await pool.execute(statement)
+                    return await pool.fetch(query, *params)
+        else:
+            async with await self.connect() as pool:
+                return await pool.fetch(query, *params)
 
-# %% ../nbs/00_vector.ipynb 24
+# %% ../nbs/00_vector.ipynb 26
 import psycopg2.pool
 from contextlib import contextmanager
 import psycopg2.extras
@@ -995,7 +1026,7 @@ import pgvector.psycopg2
 import numpy as np
 import re
 
-# %% ../nbs/00_vector.ipynb 25
+# %% ../nbs/00_vector.ipynb 27
 class Sync:
     translated_queries: Dict[str, str] = {}
 
@@ -1281,6 +1312,7 @@ class Sync:
     filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
     predicates: Optional[Predicates] = None,
     uuid_time_filter: Optional[UUIDTimeRange] = None,
+    query_params: Optional[QueryParams] = None,
     ):
         """
         Retrieves similar records using a similarity query.
@@ -1308,6 +1340,11 @@ class Sync:
         (query, params) = self.builder.search_query(
             query_embedding_np, limit, filter, predicates, uuid_time_filter)
         query, params = self._translate_to_pyformat(query, params)
+
+        if query_params is not None:
+            prefix = "; ".join(query_params.get_statements())
+            query = f"{prefix}; {query}"
+            
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params)
