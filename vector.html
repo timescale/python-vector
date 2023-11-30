@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="A module for writing and querying vectors to Postgres">
+
+<title>timescale-vector - Client</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="timescale-vector - Client">
+<meta property="og:description" content="A module for writing and querying vectors to Postgres">
+<meta property="og:site-name" content="timescale-vector">
+<meta name="twitter:title" content="timescale-vector - Client">
+<meta name="twitter:description" content="A module for writing and querying vectors to Postgres">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">timescale-vector</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools ms-auto">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./vector.html">Client</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timescale Vector</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./vector.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Client</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./pgvectorizer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PgVectorizer</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tsv_python_getting_started_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tutorial: Timescale Vector (PostgreSQL) Python Client Library</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#uuid_from_time" id="toc-uuid_from_time" class="nav-link active" data-scroll-target="#uuid_from_time">uuid_from_time</a></li>
+  <li><a href="#index-definitions" id="toc-index-definitions" class="nav-link" data-scroll-target="#index-definitions">Index Definitions</a>
+  <ul class="collapse">
+  <li><a href="#timescalevectorindex" id="toc-timescalevectorindex" class="nav-link" data-scroll-target="#timescalevectorindex">TimescaleVectorIndex</a></li>
+  <li><a href="#hnswindex" id="toc-hnswindex" class="nav-link" data-scroll-target="#hnswindex">HNSWIndex</a></li>
+  <li><a href="#ivfflatindex" id="toc-ivfflatindex" class="nav-link" data-scroll-target="#ivfflatindex">IvfflatIndex</a></li>
+  <li><a href="#baseindex" id="toc-baseindex" class="nav-link" data-scroll-target="#baseindex">BaseIndex</a></li>
+  </ul></li>
+  <li><a href="#query-params" id="toc-query-params" class="nav-link" data-scroll-target="#query-params">Query Params</a>
+  <ul class="collapse">
+  <li><a href="#hnswindexparams" id="toc-hnswindexparams" class="nav-link" data-scroll-target="#hnswindexparams">HNSWIndexParams</a></li>
+  <li><a href="#ivfflatindexparams" id="toc-ivfflatindexparams" class="nav-link" data-scroll-target="#ivfflatindexparams">IvfflatIndexParams</a></li>
+  <li><a href="#timescalevectorindexparams" id="toc-timescalevectorindexparams" class="nav-link" data-scroll-target="#timescalevectorindexparams">TimescaleVectorIndexParams</a></li>
+  <li><a href="#queryparams" id="toc-queryparams" class="nav-link" data-scroll-target="#queryparams">QueryParams</a></li>
+  </ul></li>
+  <li><a href="#query-builder" id="toc-query-builder" class="nav-link" data-scroll-target="#query-builder">Query Builder</a>
+  <ul class="collapse">
+  <li><a href="#uuidtimerange" id="toc-uuidtimerange" class="nav-link" data-scroll-target="#uuidtimerange">UUIDTimeRange</a></li>
+  <li><a href="#predicates" id="toc-predicates" class="nav-link" data-scroll-target="#predicates">Predicates</a></li>
+  <li><a href="#querybuilder" id="toc-querybuilder" class="nav-link" data-scroll-target="#querybuilder">QueryBuilder</a></li>
+  <li><a href="#querybuilder.get_create_query" id="toc-querybuilder.get_create_query" class="nav-link" data-scroll-target="#querybuilder.get_create_query">QueryBuilder.get_create_query</a></li>
+  </ul></li>
+  <li><a href="#async-client" id="toc-async-client" class="nav-link" data-scroll-target="#async-client">Async Client</a>
+  <ul class="collapse">
+  <li><a href="#async" id="toc-async" class="nav-link" data-scroll-target="#async">Async</a></li>
+  <li><a href="#async.create_tables" id="toc-async.create_tables" class="nav-link" data-scroll-target="#async.create_tables">Async.create_tables</a></li>
+  <li><a href="#async.create_tables-1" id="toc-async.create_tables-1" class="nav-link" data-scroll-target="#async.create_tables-1">Async.create_tables</a></li>
+  <li><a href="#async.search" id="toc-async.search" class="nav-link" data-scroll-target="#async.search">Async.search</a></li>
+  <li><a href="#usage-example" id="toc-usage-example" class="nav-link" data-scroll-target="#usage-example">Usage Example</a></li>
+  </ul></li>
+  <li><a href="#sync-client" id="toc-sync-client" class="nav-link" data-scroll-target="#sync-client">Sync Client</a>
+  <ul class="collapse">
+  <li><a href="#sync" id="toc-sync" class="nav-link" data-scroll-target="#sync">Sync</a></li>
+  <li><a href="#sync.create_tables" id="toc-sync.create_tables" class="nav-link" data-scroll-target="#sync.create_tables">Sync.create_tables</a></li>
+  <li><a href="#sync.upsert" id="toc-sync.upsert" class="nav-link" data-scroll-target="#sync.upsert">Sync.upsert</a></li>
+  <li><a href="#sync.search" id="toc-sync.search" class="nav-link" data-scroll-target="#sync.search">Sync.search</a></li>
+  <li><a href="#usage-example-1" id="toc-usage-example-1" class="nav-link" data-scroll-target="#usage-example-1">Usage Example:</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/timescale/python-vector/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Client</h1>
+</div>
+
+<div>
+  <div class="description">
+    A module for writing and querying vectors to Postgres
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>_ <span class="op">=</span> load_dotenv(find_dotenv(), override<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>service_url <span class="op">=</span> os.environ[<span class="st">'TIMESCALE_SERVICE_URL'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L25" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="uuid_from_time" class="level3">
+<h3 class="anchored" data-anchor-id="uuid_from_time">uuid_from_time</h3>
+<blockquote class="blockquote">
+<pre><code> uuid_from_time (time_arg=None, node=None, clock_seq=None)</code></pre>
+</blockquote>
+<p>Converts a datetime or timestamp to a type 1 <code>uuid.UUID</code>.</p>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>time_arg</td>
+<td>NoneType</td>
+<td>None</td>
+<td>The time to use for the timestamp portion of the UUID.<br>This can either be a <code>datetime</code> object or a timestamp in seconds<br>(as returned from <code>time.time()</code>).</td>
+</tr>
+<tr class="even">
+<td>node</td>
+<td>NoneType</td>
+<td>None</td>
+<td>Bytes for the UUID (up to 48 bits). If not specified, this<br>field is randomized.</td>
+</tr>
+<tr class="odd">
+<td>clock_seq</td>
+<td>NoneType</td>
+<td>None</td>
+<td>Clock sequence field for the UUID (up to 14 bits). If not specified,<br>a random sequence is generated.</td>
+</tr>
+<tr class="even">
+<td><strong>Returns</strong></td>
+<td><strong>uuid.UUID: For the given time, node, and clock sequence</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="index-definitions" class="level1">
+<h1>Index Definitions</h1>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L156" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="timescalevectorindex" class="level3">
+<h3 class="anchored" data-anchor-id="timescalevectorindex">TimescaleVectorIndex</h3>
+<blockquote class="blockquote">
+<pre><code> TimescaleVectorIndex (use_pq:Optional[bool]=None,
+                       num_neighbors:Optional[int]=None,
+                       search_list_size:Optional[int]=None,
+                       max_alpha:Optional[float]=None,
+                       pq_vector_length:Optional[int]=None)</code></pre>
+</blockquote>
+<p>Timescale’s vector index.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L132" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="hnswindex" class="level3">
+<h3 class="anchored" data-anchor-id="hnswindex">HNSWIndex</h3>
+<blockquote class="blockquote">
+<pre><code> HNSWIndex (m:Optional[int]=None, ef_construction:Optional[int]=None)</code></pre>
+</blockquote>
+<p>Pgvector’s hnsw index.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L98" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="ivfflatindex" class="level3">
+<h3 class="anchored" data-anchor-id="ivfflatindex">IvfflatIndex</h3>
+<blockquote class="blockquote">
+<pre><code> IvfflatIndex (num_records:Optional[int]=None,
+               num_lists:Optional[int]=None)</code></pre>
+</blockquote>
+<p>Pgvector’s ivfflat index.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L82" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="baseindex" class="level3">
+<h3 class="anchored" data-anchor-id="baseindex">BaseIndex</h3>
+<blockquote class="blockquote">
+<pre><code> BaseIndex ()</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+</section>
+</section>
+<section id="query-params" class="level1">
+<h1>Query Params</h1>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L213" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="hnswindexparams" class="level3">
+<h3 class="anchored" data-anchor-id="hnswindexparams">HNSWIndexParams</h3>
+<blockquote class="blockquote">
+<pre><code> HNSWIndexParams (ef_search:int)</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L209" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="ivfflatindexparams" class="level3">
+<h3 class="anchored" data-anchor-id="ivfflatindexparams">IvfflatIndexParams</h3>
+<blockquote class="blockquote">
+<pre><code> IvfflatIndexParams (probes:int)</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L205" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="timescalevectorindexparams" class="level3">
+<h3 class="anchored" data-anchor-id="timescalevectorindexparams">TimescaleVectorIndexParams</h3>
+<blockquote class="blockquote">
+<pre><code> TimescaleVectorIndexParams (search_list_size:int)</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L198" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="queryparams" class="level3">
+<h3 class="anchored" data-anchor-id="queryparams">QueryParams</h3>
+<blockquote class="blockquote">
+<pre><code> QueryParams (params:dict[str,typing.Any])</code></pre>
+</blockquote>
+<p>Initialize self. See help(type(self)) for accurate signature.</p>
+</section>
+</section>
+<section id="query-builder" class="level1">
+<h1>Query Builder</h1>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L225" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="uuidtimerange" class="level3">
+<h3 class="anchored" data-anchor-id="uuidtimerange">UUIDTimeRange</h3>
+<blockquote class="blockquote">
+<pre><code> UUIDTimeRange (start_date:Union[datetime.datetime,str,NoneType]=None,
+                end_date:Union[datetime.datetime,str,NoneType]=None,
+                time_delta:Optional[datetime.timedelta]=None,
+                start_inclusive=True, end_inclusive=False)</code></pre>
+</blockquote>
+<p>A UUIDTimeRange is a time range predicate on the UUID Version 1 timestamps.</p>
+<p>Note that naive datetime objects are interpreted as local time on the python client side and converted to UTC before being sent to the database.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L316" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="predicates" class="level3">
+<h3 class="anchored" data-anchor-id="predicates">Predicates</h3>
+<blockquote class="blockquote">
+<pre><code> Predicates (*clauses:Union[ForwardRef('Predicates'),Tuple[str,Union[str,i
+             nt,float,datetime.datetime]],Tuple[str,str,Union[str,int,floa
+             t,datetime.datetime]],str,int,float,datetime.datetime],
+             operator:str='AND')</code></pre>
+</blockquote>
+<p>Predicates class defines predicates on the object metadata. Predicates can be combined using logical operators (&amp;, |, and ~).</p>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>clauses</td>
+<td>typing.Union[ForwardRef(‘Predicates’), typing.Tuple[str, typing.Union[str, int, float, datetime.datetime]], typing.Tuple[str, str, typing.Union[str, int, float, datetime.datetime]], str, int, float, datetime.datetime]</td>
+<td></td>
+<td>Predicate clauses. Can be either another Predicates object or a tuple of the form (field, operator, value) or (field, value).</td>
+</tr>
+<tr class="even">
+<td>operator</td>
+<td>str</td>
+<td>AND</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L456" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="querybuilder" class="level3">
+<h3 class="anchored" data-anchor-id="querybuilder">QueryBuilder</h3>
+<blockquote class="blockquote">
+<pre><code> QueryBuilder (table_name:str, num_dimensions:int, distance_type:str,
+               id_type:str,
+               time_partition_interval:Optional[datetime.timedelta],
+               infer_filters:bool)</code></pre>
+</blockquote>
+<p>Initializes a base Vector object to generate queries for vector clients.</p>
+<table class="table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 38%">
+<col style="width: 52%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>table_name</td>
+<td>str</td>
+<td>The name of the table.</td>
+</tr>
+<tr class="even">
+<td>num_dimensions</td>
+<td>int</td>
+<td>The number of dimensions for the embedding vector.</td>
+</tr>
+<tr class="odd">
+<td>distance_type</td>
+<td>str</td>
+<td>The distance type for indexing.</td>
+</tr>
+<tr class="even">
+<td>id_type</td>
+<td>str</td>
+<td>The type of the id column. Can be either ‘UUID’ or ‘TEXT’.</td>
+</tr>
+<tr class="odd">
+<td>time_partition_interval</td>
+<td>typing.Optional[datetime.timedelta]</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>infer_filters</td>
+<td>bool</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Returns</strong></td>
+<td><strong>None</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L546" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="querybuilder.get_create_query" class="level3">
+<h3 class="anchored" data-anchor-id="querybuilder.get_create_query">QueryBuilder.get_create_query</h3>
+<blockquote class="blockquote">
+<pre><code> QueryBuilder.get_create_query ()</code></pre>
+</blockquote>
+<p>Generates a query to create the tables, indexes, and extensions needed to store the vector data.</p>
+</section>
+</section>
+<section id="async-client" class="level1">
+<h1>Async Client</h1>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L763" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="async" class="level3">
+<h3 class="anchored" data-anchor-id="async">Async</h3>
+<blockquote class="blockquote">
+<pre><code> Async (service_url:str, table_name:str, num_dimensions:int,
+        distance_type:str='cosine', id_type='UUID',
+        time_partition_interval:Optional[datetime.timedelta]=None,
+        max_db_connections:Optional[int]=None, infer_filters:bool=True)</code></pre>
+</blockquote>
+<p>Initializes a async client for storing vector data.</p>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>service_url</td>
+<td>str</td>
+<td></td>
+<td>The connection string for the database.</td>
+</tr>
+<tr class="even">
+<td>table_name</td>
+<td>str</td>
+<td></td>
+<td>The name of the table.</td>
+</tr>
+<tr class="odd">
+<td>num_dimensions</td>
+<td>int</td>
+<td></td>
+<td>The number of dimensions for the embedding vector.</td>
+</tr>
+<tr class="even">
+<td>distance_type</td>
+<td>str</td>
+<td>cosine</td>
+<td>The distance type for indexing.</td>
+</tr>
+<tr class="odd">
+<td>id_type</td>
+<td>str</td>
+<td>UUID</td>
+<td>The type of the id column. Can be either ‘UUID’ or ‘TEXT’.</td>
+</tr>
+<tr class="even">
+<td>time_partition_interval</td>
+<td>typing.Optional[datetime.timedelta]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>max_db_connections</td>
+<td>typing.Optional[int]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>infer_filters</td>
+<td>bool</td>
+<td>True</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Returns</strong></td>
+<td><strong>None</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L884" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="async.create_tables" class="level3">
+<h3 class="anchored" data-anchor-id="async.create_tables">Async.create_tables</h3>
+<blockquote class="blockquote">
+<pre><code> Async.create_tables ()</code></pre>
+</blockquote>
+<p>Creates necessary tables.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L884" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="async.create_tables-1" class="level3">
+<h3 class="anchored" data-anchor-id="async.create_tables-1">Async.create_tables</h3>
+<blockquote class="blockquote">
+<pre><code> Async.create_tables ()</code></pre>
+</blockquote>
+<p>Creates necessary tables.</p>
+<pre><code>/opt/hostedtoolcache/Python/3.9.18/x64/lib/python3.9/site-packages/fastcore/docscrape.py:225: UserWarning: potentially wrong underline length... 
+Returns 
+-------- in 
+Retrieves similar records using a similarity query.
+...
+  else: warn(msg)</code></pre>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L985" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="async.search" class="level3">
+<h3 class="anchored" data-anchor-id="async.search">Async.search</h3>
+<blockquote class="blockquote">
+<pre><code> Async.search (query_embedding:Optional[List[float]]=None, limit:int=10,
+               filter:Union[Dict[str,str],List[Dict[str,str]],NoneType]=No
+               ne, predicates:Optional[__main__.Predicates]=None,
+               uuid_time_filter:Optional[__main__.UUIDTimeRange]=None,
+               query_params:Optional[__main__.QueryParams]=None)</code></pre>
+</blockquote>
+<p>Retrieves similar records using a similarity query.</p>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>query_embedding</td>
+<td>typing.Optional[typing.List[float]]</td>
+<td>None</td>
+<td>The query embedding vector.</td>
+</tr>
+<tr class="even">
+<td>limit</td>
+<td>int</td>
+<td>10</td>
+<td>The number of nearest neighbors to retrieve.</td>
+</tr>
+<tr class="odd">
+<td>filter</td>
+<td>typing.Union[typing.Dict[str, str], typing.List[typing.Dict[str, str]], NoneType]</td>
+<td>None</td>
+<td>A filter for metadata. Should be specified as a key-value object or a list of key-value objects (where any objects in the list are matched).</td>
+</tr>
+<tr class="even">
+<td>predicates</td>
+<td>typing.Optional[<strong>main</strong>.Predicates]</td>
+<td>None</td>
+<td>A Predicates object to filter the results. Predicates support more complex queries than the filter parameter. Predicates can be combined using logical operators (&amp;, |, and ~).</td>
+</tr>
+<tr class="odd">
+<td>uuid_time_filter</td>
+<td>typing.Optional[<strong>main</strong>.UUIDTimeRange]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>query_params</td>
+<td>typing.Optional[<strong>main</strong>.QueryParams]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Returns</strong></td>
+<td><strong>List: List of similar records.</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="usage-example" class="level2">
+<h2 class="anchored" data-anchor-id="usage-example">Usage Example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> Async(service_url, <span class="st">"data_table"</span>, <span class="dv">2</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_tables()</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> empty</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([(uuid.uuid4(), {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> empty</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.3</span>]),</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key":"val2", "key_10": "10", "key_11": "11.3"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.4</span>]),</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.5</span>]),</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.6</span>]),</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.6</span>]),</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val2"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.7</span>]),</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.9</span>]),</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">100.8</span>]),</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">101.8</span>]),</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key_1":"val_1", "key_2":"val_2"}'''</span>,</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>     <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(IvfflatIndex())</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(IvfflatIndex(<span class="dv">100</span>))</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(HNSWIndex())</span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(HNSWIndex(<span class="dv">20</span>, <span class="dv">125</span>))</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(TimescaleVectorIndex())</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(TimescaleVectorIndex(<span class="va">False</span>, <span class="dv">50</span>, <span class="dv">50</span>, <span class="fl">1.5</span>))</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>])</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">10</span></span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key2"</span>: <span class="st">"val2"</span>})</span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key2"</span>: <span class="st">"does not exist"</span>})</span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>})</span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>, <span class="st">"key_2"</span>: <span class="st">"val_2"</span>})</span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>, <span class="st">"key_2"</span>: <span class="st">"val_3"</span>})</span>
+<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>, <span class="st">"key_2"</span>: <span class="st">"val_3"</span>})</span>
+<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-58"><a href="#cb20-58" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb20-59"><a href="#cb20-59" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-60"><a href="#cb20-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-61"><a href="#cb20-61" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}, {<span class="st">"no such key"</span>: <span class="st">"no such val"</span>}])</span>
+<span id="cb20-62"><a href="#cb20-62" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-63"><a href="#cb20-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-64"><a href="#cb20-64" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">isinstance</span>(rec[<span class="dv">0</span>][SEARCH_RESULT_METADATA_IDX], <span class="bu">dict</span>)</span>
+<span id="cb20-65"><a href="#cb20-65" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">isinstance</span>(rec[<span class="dv">0</span>][<span class="st">"metadata"</span>], <span class="bu">dict</span>)</span>
+<span id="cb20-66"><a href="#cb20-66" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][<span class="st">"contents"</span>] <span class="op">==</span> <span class="st">"the brown fox"</span></span>
+<span id="cb20-67"><a href="#cb20-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-68"><a href="#cb20-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-69"><a href="#cb20-69" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates((<span class="st">"key"</span>, <span class="st">"val2"</span>)))</span>
+<span id="cb20-70"><a href="#cb20-70" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-71"><a href="#cb20-71" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates((<span class="st">"key"</span>, <span class="st">"=="</span>, <span class="st">"val2"</span>)))</span>
+<span id="cb20-72"><a href="#cb20-72" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-73"><a href="#cb20-73" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key"</span>, <span class="st">"=="</span>, <span class="st">"val2"</span>))</span>
+<span id="cb20-74"><a href="#cb20-74" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-75"><a href="#cb20-75" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">100</span>))</span>
+<span id="cb20-76"><a href="#cb20-76" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-77"><a href="#cb20-77" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">10</span>))</span>
+<span id="cb20-78"><a href="#cb20-78" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-79"><a href="#cb20-79" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_10"</span>, <span class="st">"&lt;="</span>, <span class="dv">10</span>))</span>
+<span id="cb20-80"><a href="#cb20-80" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-81"><a href="#cb20-81" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_10"</span>, <span class="st">"&lt;="</span>, <span class="fl">10.0</span>))</span>
+<span id="cb20-82"><a href="#cb20-82" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-83"><a href="#cb20-83" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_11"</span>, <span class="st">"&lt;="</span>, <span class="fl">11.3</span>))</span>
+<span id="cb20-84"><a href="#cb20-84" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-85"><a href="#cb20-85" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_11"</span>, <span class="st">"&gt;="</span>, <span class="fl">11.29999</span>))</span>
+<span id="cb20-86"><a href="#cb20-86" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-87"><a href="#cb20-87" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_11"</span>, <span class="st">"&lt;"</span>, <span class="fl">11.299999</span>))</span>
+<span id="cb20-88"><a href="#cb20-88" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-89"><a href="#cb20-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-90"><a href="#cb20-90" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="op">*</span>[(<span class="st">"key"</span>, <span class="st">"val2"</span>), (<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">100</span>)]))</span>
+<span id="cb20-91"><a href="#cb20-91" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-92"><a href="#cb20-92" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates((<span class="st">"key"</span>, <span class="st">"val2"</span>), (<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">100</span>), operator<span class="op">=</span><span class="st">'AND'</span>))</span>
+<span id="cb20-93"><a href="#cb20-93" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-94"><a href="#cb20-94" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates((<span class="st">"key"</span>, <span class="st">"val2"</span>), (<span class="st">"key_2"</span>, <span class="st">"val_2"</span>), operator<span class="op">=</span><span class="st">'OR'</span>))</span>
+<span id="cb20-95"><a href="#cb20-95" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-96"><a href="#cb20-96" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">100</span>) <span class="op">&amp;</span> (Predicates(<span class="st">"key"</span>,<span class="st">"=="</span>, <span class="st">"val2"</span>,) <span class="op">|</span> Predicates(<span class="st">"key_2"</span>, <span class="st">"=="</span>, <span class="st">"val_2"</span>))) </span>
+<span id="cb20-97"><a href="#cb20-97" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-98"><a href="#cb20-98" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">100</span>) <span class="kw">and</span> (Predicates(<span class="st">"key"</span>,<span class="st">"=="</span>, <span class="st">"val2"</span>) <span class="kw">or</span> Predicates(<span class="st">"key_2"</span>,<span class="st">"=="</span>, <span class="st">"val_2"</span>))) </span>
+<span id="cb20-99"><a href="#cb20-99" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-100"><a href="#cb20-100" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=~</span>Predicates((<span class="st">"key"</span>, <span class="st">"val2"</span>), (<span class="st">"key_10"</span>, <span class="st">"&lt;"</span>, <span class="dv">100</span>)))</span>
+<span id="cb20-101"><a href="#cb20-101" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb20-102"><a href="#cb20-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-103"><a href="#cb20-103" aria-hidden="true" tabindex="-1"></a>raised <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb20-104"><a href="#cb20-104" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb20-105"><a href="#cb20-105" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can't upsert using both keys and dictionaries</span></span>
+<span id="cb20-106"><a href="#cb20-106" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vec.upsert([</span>
+<span id="cb20-107"><a href="#cb20-107" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(), {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>]),</span>
+<span id="cb20-108"><a href="#cb20-108" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb20-109"><a href="#cb20-109" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb20-110"><a href="#cb20-110" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ValueError</span> <span class="im">as</span> e:</span>
+<span id="cb20-111"><a href="#cb20-111" aria-hidden="true" tabindex="-1"></a>    raised <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb20-112"><a href="#cb20-112" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> raised</span>
+<span id="cb20-113"><a href="#cb20-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-114"><a href="#cb20-114" aria-hidden="true" tabindex="-1"></a>raised <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb20-115"><a href="#cb20-115" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb20-116"><a href="#cb20-116" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can't upsert using both keys and dictionaries opposite order</span></span>
+<span id="cb20-117"><a href="#cb20-117" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vec.upsert([</span>
+<span id="cb20-118"><a href="#cb20-118" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>]),</span>
+<span id="cb20-119"><a href="#cb20-119" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb20-120"><a href="#cb20-120" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb20-121"><a href="#cb20-121" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">BaseException</span> <span class="im">as</span> e:</span>
+<span id="cb20-122"><a href="#cb20-122" aria-hidden="true" tabindex="-1"></a>    raised <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb20-123"><a href="#cb20-123" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> raised</span>
+<span id="cb20-124"><a href="#cb20-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-125"><a href="#cb20-125" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb20-126"><a href="#cb20-126" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-127"><a href="#cb20-127" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.delete_by_ids([rec[<span class="dv">0</span>][<span class="st">"id"</span>]])</span>
+<span id="cb20-128"><a href="#cb20-128" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb20-129"><a href="#cb20-129" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-130"><a href="#cb20-130" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.delete_by_metadata([{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb20-131"><a href="#cb20-131" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb20-132"><a href="#cb20-132" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-133"><a href="#cb20-133" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key2"</span>: <span class="st">"val"</span>}])</span>
+<span id="cb20-134"><a href="#cb20-134" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb20-135"><a href="#cb20-135" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.delete_by_metadata([{<span class="st">"key2"</span>: <span class="st">"val"</span>}])</span>
+<span id="cb20-136"><a href="#cb20-136" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key2"</span>: <span class="st">"val"</span>}])</span>
+<span id="cb20-137"><a href="#cb20-137" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-138"><a href="#cb20-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-139"><a href="#cb20-139" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-140"><a href="#cb20-140" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.delete_all()</span>
+<span id="cb20-141"><a href="#cb20-141" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-142"><a href="#cb20-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-143"><a href="#cb20-143" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_table()</span>
+<span id="cb20-144"><a href="#cb20-144" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.close()</span>
+<span id="cb20-145"><a href="#cb20-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-146"><a href="#cb20-146" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> Async(service_url, <span class="st">"data_table"</span>, <span class="dv">2</span>, id_type<span class="op">=</span><span class="st">"TEXT"</span>)</span>
+<span id="cb20-147"><a href="#cb20-147" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_tables()</span>
+<span id="cb20-148"><a href="#cb20-148" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-149"><a href="#cb20-149" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> empty</span>
+<span id="cb20-150"><a href="#cb20-150" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([(<span class="st">"Not a valid UUID"</span>, {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span>
+<span id="cb20-151"><a href="#cb20-151" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-152"><a href="#cb20-152" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> empty</span>
+<span id="cb20-153"><a href="#cb20-153" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.delete_by_ids([<span class="st">"Not a valid UUID"</span>])</span>
+<span id="cb20-154"><a href="#cb20-154" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-155"><a href="#cb20-155" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> empty</span>
+<span id="cb20-156"><a href="#cb20-156" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_table()</span>
+<span id="cb20-157"><a href="#cb20-157" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.close()</span>
+<span id="cb20-158"><a href="#cb20-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-159"><a href="#cb20-159" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> Async(service_url, <span class="st">"data_table"</span>, <span class="dv">2</span>, time_partition_interval<span class="op">=</span>timedelta(seconds<span class="op">=</span><span class="dv">60</span>))</span>
+<span id="cb20-160"><a href="#cb20-160" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_tables()</span>
+<span id="cb20-161"><a href="#cb20-161" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-162"><a href="#cb20-162" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> empty</span>
+<span id="cb20-163"><a href="#cb20-163" aria-hidden="true" tabindex="-1"></a><span class="bu">id</span> <span class="op">=</span> uuid.uuid1()</span>
+<span id="cb20-164"><a href="#cb20-164" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([(<span class="bu">id</span>, {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span>
+<span id="cb20-165"><a href="#cb20-165" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-166"><a href="#cb20-166" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> empty</span>
+<span id="cb20-167"><a href="#cb20-167" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.delete_by_ids([<span class="bu">id</span>])</span>
+<span id="cb20-168"><a href="#cb20-168" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-169"><a href="#cb20-169" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> empty</span>
+<span id="cb20-170"><a href="#cb20-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-171"><a href="#cb20-171" aria-hidden="true" tabindex="-1"></a>raised <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb20-172"><a href="#cb20-172" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb20-173"><a href="#cb20-173" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can't upsert with uuid type 4 in time partitioned table</span></span>
+<span id="cb20-174"><a href="#cb20-174" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vec.upsert([</span>
+<span id="cb20-175"><a href="#cb20-175" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb20-176"><a href="#cb20-176" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb20-177"><a href="#cb20-177" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">BaseException</span> <span class="im">as</span> e:</span>
+<span id="cb20-178"><a href="#cb20-178" aria-hidden="true" tabindex="-1"></a>    raised <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb20-179"><a href="#cb20-179" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> raised</span>
+<span id="cb20-180"><a href="#cb20-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-181"><a href="#cb20-181" aria-hidden="true" tabindex="-1"></a>specific_datetime <span class="op">=</span> datetime(<span class="dv">2018</span>, <span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">30</span>, <span class="dv">0</span>)</span>
+<span id="cb20-182"><a href="#cb20-182" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([</span>
+<span id="cb20-183"><a href="#cb20-183" aria-hidden="true" tabindex="-1"></a>        <span class="co"># current time</span></span>
+<span id="cb20-184"><a href="#cb20-184" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid1(),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>]),</span>
+<span id="cb20-185"><a href="#cb20-185" aria-hidden="true" tabindex="-1"></a>        <span class="co">#time in 2018</span></span>
+<span id="cb20-186"><a href="#cb20-186" aria-hidden="true" tabindex="-1"></a>        (uuid_from_time(specific_datetime),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb20-187"><a href="#cb20-187" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb20-188"><a href="#cb20-188" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> <span class="cf">await</span> vec.table_is_empty()</span>
+<span id="cb20-189"><a href="#cb20-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-190"><a href="#cb20-190" aria-hidden="true" tabindex="-1"></a><span class="co">#check all the possible ways to specify a date range</span></span>
+<span id="cb20-191"><a href="#cb20-191" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> search_date(start_date, end_date, expected):</span>
+<span id="cb20-192"><a href="#cb20-192" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using uuid_time_filter</span></span>
+<span id="cb20-193"><a href="#cb20-193" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(start_date, end_date))</span>
+<span id="cb20-194"><a href="#cb20-194" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb20-195"><a href="#cb20-195" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(<span class="bu">str</span>(start_date), <span class="bu">str</span>(end_date)))</span>
+<span id="cb20-196"><a href="#cb20-196" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb20-197"><a href="#cb20-197" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-198"><a href="#cb20-198" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using filters</span></span>
+<span id="cb20-199"><a href="#cb20-199" aria-hidden="true" tabindex="-1"></a>    <span class="bu">filter</span> <span class="op">=</span> {}</span>
+<span id="cb20-200"><a href="#cb20-200" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-201"><a href="#cb20-201" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__start_date"</span>] <span class="op">=</span> start_date</span>
+<span id="cb20-202"><a href="#cb20-202" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-203"><a href="#cb20-203" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__end_date"</span>] <span class="op">=</span> end_date</span>
+<span id="cb20-204"><a href="#cb20-204" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span><span class="bu">filter</span>)</span>
+<span id="cb20-205"><a href="#cb20-205" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb20-206"><a href="#cb20-206" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using filters with string dates</span></span>
+<span id="cb20-207"><a href="#cb20-207" aria-hidden="true" tabindex="-1"></a>    <span class="bu">filter</span> <span class="op">=</span> {}</span>
+<span id="cb20-208"><a href="#cb20-208" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-209"><a href="#cb20-209" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__start_date"</span>] <span class="op">=</span> <span class="bu">str</span>(start_date)</span>
+<span id="cb20-210"><a href="#cb20-210" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-211"><a href="#cb20-211" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__end_date"</span>] <span class="op">=</span> <span class="bu">str</span>(end_date)</span>
+<span id="cb20-212"><a href="#cb20-212" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span><span class="bu">filter</span>)</span>
+<span id="cb20-213"><a href="#cb20-213" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb20-214"><a href="#cb20-214" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using predicates</span></span>
+<span id="cb20-215"><a href="#cb20-215" aria-hidden="true" tabindex="-1"></a>    predicates <span class="op">=</span> []</span>
+<span id="cb20-216"><a href="#cb20-216" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-217"><a href="#cb20-217" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&gt;="</span>, start_date))</span>
+<span id="cb20-218"><a href="#cb20-218" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-219"><a href="#cb20-219" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&lt;"</span>, end_date))</span>
+<span id="cb20-220"><a href="#cb20-220" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="op">*</span>predicates))</span>
+<span id="cb20-221"><a href="#cb20-221" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb20-222"><a href="#cb20-222" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using predicates with string dates</span></span>
+<span id="cb20-223"><a href="#cb20-223" aria-hidden="true" tabindex="-1"></a>    predicates <span class="op">=</span> []</span>
+<span id="cb20-224"><a href="#cb20-224" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-225"><a href="#cb20-225" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&gt;="</span>, <span class="bu">str</span>(start_date)))</span>
+<span id="cb20-226"><a href="#cb20-226" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb20-227"><a href="#cb20-227" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&lt;"</span>, <span class="bu">str</span>(end_date)))</span>
+<span id="cb20-228"><a href="#cb20-228" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="op">*</span>predicates))</span>
+<span id="cb20-229"><a href="#cb20-229" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb20-230"><a href="#cb20-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-231"><a href="#cb20-231" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> search_date(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), <span class="dv">1</span>)</span>
+<span id="cb20-232"><a href="#cb20-232" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> search_date(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), <span class="va">None</span>, <span class="dv">2</span>)</span>
+<span id="cb20-233"><a href="#cb20-233" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> search_date(<span class="va">None</span>, specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), <span class="dv">1</span>)</span>
+<span id="cb20-234"><a href="#cb20-234" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> search_date(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">2</span>), <span class="dv">0</span>)</span>
+<span id="cb20-235"><a href="#cb20-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-236"><a href="#cb20-236" aria-hidden="true" tabindex="-1"></a><span class="co">#check timedelta handling</span></span>
+<span id="cb20-237"><a href="#cb20-237" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(start_date<span class="op">=</span>specific_datetime, time_delta<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span>
+<span id="cb20-238"><a href="#cb20-238" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-239"><a href="#cb20-239" aria-hidden="true" tabindex="-1"></a><span class="co">#end is exclusive</span></span>
+<span id="cb20-240"><a href="#cb20-240" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(end_date<span class="op">=</span>specific_datetime, time_delta<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span>
+<span id="cb20-241"><a href="#cb20-241" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb20-242"><a href="#cb20-242" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(end_date<span class="op">=</span>specific_datetime<span class="op">+</span>timedelta(seconds<span class="op">=</span><span class="dv">1</span>), time_delta<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span>
+<span id="cb20-243"><a href="#cb20-243" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb20-244"><a href="#cb20-244" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>TimescaleVectorIndexParams(<span class="dv">10</span>))</span>
+<span id="cb20-245"><a href="#cb20-245" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-246"><a href="#cb20-246" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>TimescaleVectorIndexParams(<span class="dv">100</span>))</span>
+<span id="cb20-247"><a href="#cb20-247" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb20-248"><a href="#cb20-248" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_table()</span>
+<span id="cb20-249"><a href="#cb20-249" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="sync-client" class="level1">
+<h1>Sync Client</h1>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L1034" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="sync" class="level3">
+<h3 class="anchored" data-anchor-id="sync">Sync</h3>
+<blockquote class="blockquote">
+<pre><code> Sync (service_url:str, table_name:str, num_dimensions:int,
+       distance_type:str='cosine', id_type='UUID',
+       time_partition_interval:Optional[datetime.timedelta]=None,
+       max_db_connections:Optional[int]=None, infer_filters:bool=True)</code></pre>
+</blockquote>
+<p>Initializes a sync client for storing vector data.</p>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>service_url</td>
+<td>str</td>
+<td></td>
+<td>The connection string for the database.</td>
+</tr>
+<tr class="even">
+<td>table_name</td>
+<td>str</td>
+<td></td>
+<td>The name of the table.</td>
+</tr>
+<tr class="odd">
+<td>num_dimensions</td>
+<td>int</td>
+<td></td>
+<td>The number of dimensions for the embedding vector.</td>
+</tr>
+<tr class="even">
+<td>distance_type</td>
+<td>str</td>
+<td>cosine</td>
+<td>The distance type for indexing.</td>
+</tr>
+<tr class="odd">
+<td>id_type</td>
+<td>str</td>
+<td>UUID</td>
+<td>The type of the primary id column. Can be either ‘UUID’ or ‘TEXT’.</td>
+</tr>
+<tr class="even">
+<td>time_partition_interval</td>
+<td>typing.Optional[datetime.timedelta]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>max_db_connections</td>
+<td>typing.Optional[int]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>infer_filters</td>
+<td>bool</td>
+<td>True</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Returns</strong></td>
+<td><strong>None</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L1198" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="sync.create_tables" class="level3">
+<h3 class="anchored" data-anchor-id="sync.create_tables">Sync.create_tables</h3>
+<blockquote class="blockquote">
+<pre><code> Sync.create_tables ()</code></pre>
+</blockquote>
+<p>Creates necessary tables.</p>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L1178" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="sync.upsert" class="level3">
+<h3 class="anchored" data-anchor-id="sync.upsert">Sync.upsert</h3>
+<blockquote class="blockquote">
+<pre><code> Sync.upsert (records)</code></pre>
+</blockquote>
+<p>Performs upsert operation for multiple records.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>records</td>
+<td></td>
+<td>Records to upsert.</td>
+</tr>
+<tr class="even">
+<td><strong>Returns</strong></td>
+<td><strong>None</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><a href="https://github.com/timescale/python-vector/blob/main/timescale_vector/client.py#L1313" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="sync.search" class="level3">
+<h3 class="anchored" data-anchor-id="sync.search">Sync.search</h3>
+<blockquote class="blockquote">
+<pre><code> Sync.search (query_embedding:Optional[List[float]]=None, limit:int=10,
+              filter:Union[Dict[str,str],List[Dict[str,str]],NoneType]=Non
+              e, predicates:Optional[__main__.Predicates]=None,
+              uuid_time_filter:Optional[__main__.UUIDTimeRange]=None,
+              query_params:Optional[__main__.QueryParams]=None)</code></pre>
+</blockquote>
+<p>Retrieves similar records using a similarity query.</p>
+<table class="table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>Type</strong></th>
+<th><strong>Default</strong></th>
+<th><strong>Details</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>query_embedding</td>
+<td>typing.Optional[typing.List[float]]</td>
+<td>None</td>
+<td>The query embedding vector.</td>
+</tr>
+<tr class="even">
+<td>limit</td>
+<td>int</td>
+<td>10</td>
+<td>The number of nearest neighbors to retrieve.</td>
+</tr>
+<tr class="odd">
+<td>filter</td>
+<td>typing.Union[typing.Dict[str, str], typing.List[typing.Dict[str, str]], NoneType]</td>
+<td>None</td>
+<td>A filter for metadata. Should be specified as a key-value object or a list of key-value objects (where any objects in the list are matched).</td>
+</tr>
+<tr class="even">
+<td>predicates</td>
+<td>typing.Optional[<strong>main</strong>.Predicates]</td>
+<td>None</td>
+<td>A Predicates object to filter the results. Predicates support more complex queries than the filter parameter. Predicates can be combined using logical operators (&amp;, |, and ~).</td>
+</tr>
+<tr class="odd">
+<td>uuid_time_filter</td>
+<td>typing.Optional[<strong>main</strong>.UUIDTimeRange]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>query_params</td>
+<td>typing.Optional[<strong>main</strong>.QueryParams]</td>
+<td>None</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Returns</strong></td>
+<td><strong>List: List of similar records.</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="usage-example-1" class="level2">
+<h2 class="anchored" data-anchor-id="usage-example-1">Usage Example:</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> Sync(service_url, <span class="st">"data_table"</span>, <span class="dv">2</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>vec.create_tables()</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> vec.table_is_empty()</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> empty</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>vec.upsert([(uuid.uuid4(), {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>empty <span class="op">=</span> vec.table_is_empty()</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> empty</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>vec.upsert([</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.3</span>]),</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key":"val2"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.4</span>]),</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.5</span>]),</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.6</span>]),</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.6</span>]),</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val2"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.7</span>]),</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.9</span>]),</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">100.8</span>]),</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">101.8</span>]),</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid4(), <span class="st">'''{"key_1":"val_1", "key_2":"val_2"}'''</span>,</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>     <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.8</span>]),</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(IvfflatIndex())</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(IvfflatIndex(<span class="dv">100</span>))</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(HNSWIndex())</span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(HNSWIndex(<span class="dv">20</span>, <span class="dv">125</span>))</span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(TimescaleVectorIndex())</span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(TimescaleVectorIndex(<span class="va">False</span>, <span class="dv">50</span>, <span class="dv">50</span>, <span class="fl">1.5</span>))</span>
+<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>])</span>
+<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">10</span></span>
+<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search(np.array([<span class="fl">1.0</span>, <span class="fl">2.0</span>]))</span>
+<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">10</span></span>
+<span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key2"</span>: <span class="st">"val2"</span>})</span>
+<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key2"</span>: <span class="st">"does not exist"</span>})</span>
+<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search(limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key2"</span>: <span class="st">"does not exist"</span>})</span>
+<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>})</span>
+<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>, <span class="st">"key_2"</span>: <span class="st">"val_2"</span>})</span>
+<span id="cb25-56"><a href="#cb25-56" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{</span>
+<span id="cb25-58"><a href="#cb25-58" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"key_1"</span>: <span class="st">"val_1"</span>, <span class="st">"key_2"</span>: <span class="st">"val_3"</span>})</span>
+<span id="cb25-59"><a href="#cb25-59" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb25-60"><a href="#cb25-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-61"><a href="#cb25-61" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[</span>
+<span id="cb25-62"><a href="#cb25-62" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb25-63"><a href="#cb25-63" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb25-64"><a href="#cb25-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-65"><a href="#cb25-65" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {</span>
+<span id="cb25-66"><a href="#cb25-66" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"key2"</span>: <span class="st">"val2"</span>}, {<span class="st">"no such key"</span>: <span class="st">"no such val"</span>}])</span>
+<span id="cb25-67"><a href="#cb25-67" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb25-68"><a href="#cb25-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-69"><a href="#cb25-69" aria-hidden="true" tabindex="-1"></a>raised <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb25-70"><a href="#cb25-70" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb25-71"><a href="#cb25-71" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can't upsert using both keys and dictionaries</span></span>
+<span id="cb25-72"><a href="#cb25-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vec.upsert([</span>
+<span id="cb25-73"><a href="#cb25-73" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(), {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>]),</span>
+<span id="cb25-74"><a href="#cb25-74" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb25-75"><a href="#cb25-75" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb25-76"><a href="#cb25-76" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ValueError</span> <span class="im">as</span> e:</span>
+<span id="cb25-77"><a href="#cb25-77" aria-hidden="true" tabindex="-1"></a>    raised <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb25-78"><a href="#cb25-78" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> raised</span>
+<span id="cb25-79"><a href="#cb25-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-80"><a href="#cb25-80" aria-hidden="true" tabindex="-1"></a>raised <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb25-81"><a href="#cb25-81" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb25-82"><a href="#cb25-82" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can't upsert using both keys and dictionaries opposite order</span></span>
+<span id="cb25-83"><a href="#cb25-83" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> vec.upsert([</span>
+<span id="cb25-84"><a href="#cb25-84" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(), <span class="st">'''{"key2":"val"}'''</span>, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>]),</span>
+<span id="cb25-85"><a href="#cb25-85" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb25-86"><a href="#cb25-86" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb25-87"><a href="#cb25-87" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">BaseException</span> <span class="im">as</span> e:</span>
+<span id="cb25-88"><a href="#cb25-88" aria-hidden="true" tabindex="-1"></a>    raised <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb25-89"><a href="#cb25-89" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> raised</span>
+<span id="cb25-90"><a href="#cb25-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-91"><a href="#cb25-91" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], <span class="bu">filter</span><span class="op">=</span>{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>, <span class="st">"key_2"</span>: <span class="st">"val_2"</span>})</span>
+<span id="cb25-92"><a href="#cb25-92" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][SEARCH_RESULT_CONTENTS_IDX] <span class="op">==</span> <span class="st">'the brown fox'</span></span>
+<span id="cb25-93"><a href="#cb25-93" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][<span class="st">"contents"</span>] <span class="op">==</span> <span class="st">'the brown fox'</span></span>
+<span id="cb25-94"><a href="#cb25-94" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][SEARCH_RESULT_METADATA_IDX] <span class="op">==</span> {</span>
+<span id="cb25-95"><a href="#cb25-95" aria-hidden="true" tabindex="-1"></a>    <span class="st">'key_1'</span>: <span class="st">'val_1'</span>, <span class="st">'key_2'</span>: <span class="st">'val_2'</span>}</span>
+<span id="cb25-96"><a href="#cb25-96" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][<span class="st">"metadata"</span>] <span class="op">==</span> {</span>
+<span id="cb25-97"><a href="#cb25-97" aria-hidden="true" tabindex="-1"></a>    <span class="st">'key_1'</span>: <span class="st">'val_1'</span>, <span class="st">'key_2'</span>: <span class="st">'val_2'</span>}</span>
+<span id="cb25-98"><a href="#cb25-98" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">isinstance</span>(rec[<span class="dv">0</span>][SEARCH_RESULT_METADATA_IDX], <span class="bu">dict</span>)</span>
+<span id="cb25-99"><a href="#cb25-99" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][SEARCH_RESULT_DISTANCE_IDX] <span class="op">==</span> <span class="fl">0.0009438353921149556</span></span>
+<span id="cb25-100"><a href="#cb25-100" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> rec[<span class="dv">0</span>][<span class="st">"distance"</span>] <span class="op">==</span> <span class="fl">0.0009438353921149556</span></span>
+<span id="cb25-101"><a href="#cb25-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-102"><a href="#cb25-102" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="st">"key"</span>,<span class="st">"=="</span>, <span class="st">"val2"</span>))</span>
+<span id="cb25-103"><a href="#cb25-103" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-104"><a href="#cb25-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-105"><a href="#cb25-105" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[</span>
+<span id="cb25-106"><a href="#cb25-106" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb25-107"><a href="#cb25-107" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb25-108"><a href="#cb25-108" aria-hidden="true" tabindex="-1"></a>vec.delete_by_ids([rec[<span class="dv">0</span>][SEARCH_RESULT_ID_IDX]])</span>
+<span id="cb25-109"><a href="#cb25-109" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[</span>
+<span id="cb25-110"><a href="#cb25-110" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb25-111"><a href="#cb25-111" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-112"><a href="#cb25-112" aria-hidden="true" tabindex="-1"></a>vec.delete_by_metadata([{<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb25-113"><a href="#cb25-113" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[</span>
+<span id="cb25-114"><a href="#cb25-114" aria-hidden="true" tabindex="-1"></a>                 {<span class="st">"key_1"</span>: <span class="st">"val_1"</span>}, {<span class="st">"key2"</span>: <span class="st">"val2"</span>}])</span>
+<span id="cb25-115"><a href="#cb25-115" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb25-116"><a href="#cb25-116" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key2"</span>: <span class="st">"val"</span>}])</span>
+<span id="cb25-117"><a href="#cb25-117" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">4</span></span>
+<span id="cb25-118"><a href="#cb25-118" aria-hidden="true" tabindex="-1"></a>vec.delete_by_metadata([{<span class="st">"key2"</span>: <span class="st">"val"</span>}])</span>
+<span id="cb25-119"><a href="#cb25-119" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"key2"</span>: <span class="st">"val"</span>}])</span>
+<span id="cb25-120"><a href="#cb25-120" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb25-121"><a href="#cb25-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-122"><a href="#cb25-122" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> vec.table_is_empty()</span>
+<span id="cb25-123"><a href="#cb25-123" aria-hidden="true" tabindex="-1"></a>vec.delete_all()</span>
+<span id="cb25-124"><a href="#cb25-124" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> vec.table_is_empty()</span>
+<span id="cb25-125"><a href="#cb25-125" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-126"><a href="#cb25-126" aria-hidden="true" tabindex="-1"></a>vec.drop_table()</span>
+<span id="cb25-127"><a href="#cb25-127" aria-hidden="true" tabindex="-1"></a>vec.close()</span>
+<span id="cb25-128"><a href="#cb25-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-129"><a href="#cb25-129" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> Sync(service_url, <span class="st">"data_table"</span>, <span class="dv">2</span>, id_type<span class="op">=</span><span class="st">"TEXT"</span>)</span>
+<span id="cb25-130"><a href="#cb25-130" aria-hidden="true" tabindex="-1"></a>vec.create_tables()</span>
+<span id="cb25-131"><a href="#cb25-131" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> vec.table_is_empty()</span>
+<span id="cb25-132"><a href="#cb25-132" aria-hidden="true" tabindex="-1"></a>vec.upsert([(<span class="st">"Not a valid UUID"</span>, {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span>
+<span id="cb25-133"><a href="#cb25-133" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> vec.table_is_empty()</span>
+<span id="cb25-134"><a href="#cb25-134" aria-hidden="true" tabindex="-1"></a>vec.delete_by_ids([<span class="st">"Not a valid UUID"</span>])</span>
+<span id="cb25-135"><a href="#cb25-135" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> vec.table_is_empty()</span>
+<span id="cb25-136"><a href="#cb25-136" aria-hidden="true" tabindex="-1"></a>vec.drop_table()</span>
+<span id="cb25-137"><a href="#cb25-137" aria-hidden="true" tabindex="-1"></a>vec.close()</span>
+<span id="cb25-138"><a href="#cb25-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-139"><a href="#cb25-139" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> Sync(service_url, <span class="st">"data_table"</span>, <span class="dv">2</span>, time_partition_interval<span class="op">=</span>timedelta(seconds<span class="op">=</span><span class="dv">60</span>))</span>
+<span id="cb25-140"><a href="#cb25-140" aria-hidden="true" tabindex="-1"></a>vec.create_tables()</span>
+<span id="cb25-141"><a href="#cb25-141" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> vec.table_is_empty()</span>
+<span id="cb25-142"><a href="#cb25-142" aria-hidden="true" tabindex="-1"></a><span class="bu">id</span> <span class="op">=</span> uuid.uuid1()</span>
+<span id="cb25-143"><a href="#cb25-143" aria-hidden="true" tabindex="-1"></a>vec.upsert([(<span class="bu">id</span>, {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span>
+<span id="cb25-144"><a href="#cb25-144" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> vec.table_is_empty()</span>
+<span id="cb25-145"><a href="#cb25-145" aria-hidden="true" tabindex="-1"></a>vec.delete_by_ids([<span class="bu">id</span>])</span>
+<span id="cb25-146"><a href="#cb25-146" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> vec.table_is_empty()</span>
+<span id="cb25-147"><a href="#cb25-147" aria-hidden="true" tabindex="-1"></a>raised <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb25-148"><a href="#cb25-148" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb25-149"><a href="#cb25-149" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can't upsert with uuid type 4 in time partitioned table</span></span>
+<span id="cb25-150"><a href="#cb25-150" aria-hidden="true" tabindex="-1"></a>    vec.upsert([</span>
+<span id="cb25-151"><a href="#cb25-151" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid4(),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb25-152"><a href="#cb25-152" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb25-153"><a href="#cb25-153" aria-hidden="true" tabindex="-1"></a>    <span class="co">#pass</span></span>
+<span id="cb25-154"><a href="#cb25-154" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">BaseException</span> <span class="im">as</span> e:</span>
+<span id="cb25-155"><a href="#cb25-155" aria-hidden="true" tabindex="-1"></a>    raised <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb25-156"><a href="#cb25-156" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> raised</span>
+<span id="cb25-157"><a href="#cb25-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-158"><a href="#cb25-158" aria-hidden="true" tabindex="-1"></a>specific_datetime <span class="op">=</span> datetime(<span class="dv">2018</span>, <span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">30</span>, <span class="dv">0</span>)</span>
+<span id="cb25-159"><a href="#cb25-159" aria-hidden="true" tabindex="-1"></a>vec.upsert([</span>
+<span id="cb25-160"><a href="#cb25-160" aria-hidden="true" tabindex="-1"></a>        <span class="co"># current time</span></span>
+<span id="cb25-161"><a href="#cb25-161" aria-hidden="true" tabindex="-1"></a>        (uuid.uuid1(),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>]),</span>
+<span id="cb25-162"><a href="#cb25-162" aria-hidden="true" tabindex="-1"></a>        <span class="co">#time in 2018</span></span>
+<span id="cb25-163"><a href="#cb25-163" aria-hidden="true" tabindex="-1"></a>        (uuid_from_time(specific_datetime),  {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])</span>
+<span id="cb25-164"><a href="#cb25-164" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb25-165"><a href="#cb25-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-166"><a href="#cb25-166" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> search_date(start_date, end_date, expected):</span>
+<span id="cb25-167"><a href="#cb25-167" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using uuid_time_filter</span></span>
+<span id="cb25-168"><a href="#cb25-168" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(start_date, end_date))</span>
+<span id="cb25-169"><a href="#cb25-169" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb25-170"><a href="#cb25-170" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(<span class="bu">str</span>(start_date), <span class="bu">str</span>(end_date)))</span>
+<span id="cb25-171"><a href="#cb25-171" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb25-172"><a href="#cb25-172" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-173"><a href="#cb25-173" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using filters</span></span>
+<span id="cb25-174"><a href="#cb25-174" aria-hidden="true" tabindex="-1"></a>    <span class="bu">filter</span> <span class="op">=</span> {}</span>
+<span id="cb25-175"><a href="#cb25-175" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-176"><a href="#cb25-176" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__start_date"</span>] <span class="op">=</span> start_date</span>
+<span id="cb25-177"><a href="#cb25-177" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-178"><a href="#cb25-178" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__end_date"</span>] <span class="op">=</span> end_date</span>
+<span id="cb25-179"><a href="#cb25-179" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span><span class="bu">filter</span>)</span>
+<span id="cb25-180"><a href="#cb25-180" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb25-181"><a href="#cb25-181" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using filters with string dates</span></span>
+<span id="cb25-182"><a href="#cb25-182" aria-hidden="true" tabindex="-1"></a>    <span class="bu">filter</span> <span class="op">=</span> {}</span>
+<span id="cb25-183"><a href="#cb25-183" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-184"><a href="#cb25-184" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__start_date"</span>] <span class="op">=</span> <span class="bu">str</span>(start_date)</span>
+<span id="cb25-185"><a href="#cb25-185" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-186"><a href="#cb25-186" aria-hidden="true" tabindex="-1"></a>        <span class="bu">filter</span>[<span class="st">"__end_date"</span>] <span class="op">=</span> <span class="bu">str</span>(end_date)</span>
+<span id="cb25-187"><a href="#cb25-187" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span><span class="bu">filter</span>)</span>
+<span id="cb25-188"><a href="#cb25-188" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb25-189"><a href="#cb25-189" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using predicates</span></span>
+<span id="cb25-190"><a href="#cb25-190" aria-hidden="true" tabindex="-1"></a>    predicates <span class="op">=</span> []</span>
+<span id="cb25-191"><a href="#cb25-191" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-192"><a href="#cb25-192" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&gt;="</span>, start_date))</span>
+<span id="cb25-193"><a href="#cb25-193" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-194"><a href="#cb25-194" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&lt;"</span>, end_date))</span>
+<span id="cb25-195"><a href="#cb25-195" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="op">*</span>predicates))</span>
+<span id="cb25-196"><a href="#cb25-196" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb25-197"><a href="#cb25-197" aria-hidden="true" tabindex="-1"></a>    <span class="co">#using predicates with string dates</span></span>
+<span id="cb25-198"><a href="#cb25-198" aria-hidden="true" tabindex="-1"></a>    predicates <span class="op">=</span> []</span>
+<span id="cb25-199"><a href="#cb25-199" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> start_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-200"><a href="#cb25-200" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&gt;="</span>, <span class="bu">str</span>(start_date)))</span>
+<span id="cb25-201"><a href="#cb25-201" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> end_date <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb25-202"><a href="#cb25-202" aria-hidden="true" tabindex="-1"></a>        predicates.append((<span class="st">"__uuid_timestamp"</span>, <span class="st">"&lt;"</span>, <span class="bu">str</span>(end_date)))</span>
+<span id="cb25-203"><a href="#cb25-203" aria-hidden="true" tabindex="-1"></a>    rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, predicates<span class="op">=</span>Predicates(<span class="op">*</span>predicates))</span>
+<span id="cb25-204"><a href="#cb25-204" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> expected</span>
+<span id="cb25-205"><a href="#cb25-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-206"><a href="#cb25-206" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="kw">not</span> vec.table_is_empty()</span>
+<span id="cb25-207"><a href="#cb25-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-208"><a href="#cb25-208" aria-hidden="true" tabindex="-1"></a>search_date(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), <span class="dv">1</span>)</span>
+<span id="cb25-209"><a href="#cb25-209" aria-hidden="true" tabindex="-1"></a>search_date(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), <span class="va">None</span>, <span class="dv">2</span>)</span>
+<span id="cb25-210"><a href="#cb25-210" aria-hidden="true" tabindex="-1"></a>search_date(<span class="va">None</span>, specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), <span class="dv">1</span>)</span>
+<span id="cb25-211"><a href="#cb25-211" aria-hidden="true" tabindex="-1"></a>search_date(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">2</span>), <span class="dv">0</span>)</span>
+<span id="cb25-212"><a href="#cb25-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-213"><a href="#cb25-213" aria-hidden="true" tabindex="-1"></a><span class="co">#check timedelta handling</span></span>
+<span id="cb25-214"><a href="#cb25-214" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(start_date<span class="op">=</span>specific_datetime, time_delta<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span>
+<span id="cb25-215"><a href="#cb25-215" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-216"><a href="#cb25-216" aria-hidden="true" tabindex="-1"></a><span class="co">#end is exclusive</span></span>
+<span id="cb25-217"><a href="#cb25-217" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span>  vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(end_date<span class="op">=</span>specific_datetime, time_delta<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span>
+<span id="cb25-218"><a href="#cb25-218" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb25-219"><a href="#cb25-219" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>UUIDTimeRange(end_date<span class="op">=</span>specific_datetime<span class="op">+</span>timedelta(seconds<span class="op">=</span><span class="dv">1</span>), time_delta<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span>
+<span id="cb25-220"><a href="#cb25-220" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb25-221"><a href="#cb25-221" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>TimescaleVectorIndexParams(<span class="dv">10</span>))</span>
+<span id="cb25-222"><a href="#cb25-222" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb25-223"><a href="#cb25-223" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>TimescaleVectorIndexParams(<span class="dv">100</span>))</span>
+<span id="cb25-224"><a href="#cb25-224" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(rec) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb25-225"><a href="#cb25-225" aria-hidden="true" tabindex="-1"></a>vec.drop_table()</span>
+<span id="cb25-226"><a href="#cb25-226" aria-hidden="true" tabindex="-1"></a>vec.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

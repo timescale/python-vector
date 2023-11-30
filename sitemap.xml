@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://timescale.github.io/python-vector/tsv_python_getting_started_tutorial.html</loc>
+    <lastmod>2023-11-30T20:58:58.100Z</lastmod>
+  </url>
+  <url>
+    <loc>https://timescale.github.io/python-vector/pgvectorizer.html</loc>
+    <lastmod>2023-11-30T20:58:56.536Z</lastmod>
+  </url>
+  <url>
+    <loc>https://timescale.github.io/python-vector/index.html</loc>
+    <lastmod>2023-11-30T20:58:55.944Z</lastmod>
+  </url>
+  <url>
+    <loc>https://timescale.github.io/python-vector/vector.html</loc>
+    <lastmod>2023-11-30T20:58:57.380Z</lastmod>
+  </url>
+</urlset>
