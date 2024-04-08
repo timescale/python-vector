@@ -328,9 +328,10 @@ class Predicates:
         "<=": "<=",
         "<": "<",
         "!=": "<>",
+        "@>": "@>", # array contains
     }
 
-    PredicateValue = Union[str, int, float, datetime]
+    PredicateValue = Union[str, int, float, datetime, list, tuple]
 
     def __init__(self, *clauses: Union['Predicates', Tuple[str, PredicateValue], Tuple[str, str, PredicateValue], str, PredicateValue], operator: str = 'AND'):
         """
@@ -431,18 +432,24 @@ class Predicates:
                     else:
                         where_conditions.append(f"uuid_timestamp(id) {operator} {param_name}")
                     params.append(value)
-                    continue
-
-                field_cast = ''
-                if isinstance(value, int):
-                    field_cast = '::int'
-                elif isinstance(value, float):
-                    field_cast = '::numeric'
-                elif isinstance(value, datetime):
-                    field_cast = '::timestamptz'   
-
-                where_conditions.append(f"(metadata->>'{field}'){field_cast} {operator} {param_name}")
-                params.append(value) 
+                
+                elif operator == "@>" and (isinstance(value, list) or isinstance(value, tuple)):
+                    if len(value) == 0:
+                        raise ValueError("Invalid value. Empty lists and empty tuples are not supported.")
+                    json_value = json.dumps(value)
+                    where_conditions.append(f"metadata @> jsonb_build_object('{field}', {param_name}::jsonb)")
+                    params.append(json_value)
+                
+                else:
+                    field_cast = ''
+                    if isinstance(value, int):
+                        field_cast = '::int'
+                    elif isinstance(value, float):
+                        field_cast = '::numeric'
+                    elif isinstance(value, datetime):
+                        field_cast = '::timestamptz'
+                    where_conditions.append(f"(metadata->>'{field}'){field_cast} {operator} {param_name}")
+                    params.append(value) 
 
         if self.operator == 'NOT':
             or_clauses = (" OR ").join(where_conditions)
@@ -972,7 +979,7 @@ class Async(QueryBuilder):
             The index to create.
 
         Returns
-        --------
+        -------
             None
         """
         #todo: can we make geting the records lazy?
@@ -1003,9 +1010,12 @@ class Async(QueryBuilder):
             A filter for metadata. Should be specified as a key-value object or a list of key-value objects (where any objects in the list are matched).
         predicates
             A Predicates object to filter the results. Predicates support more complex queries than the filter parameter. Predicates can be combined using logical operators (&, |, and ~).
+        uuid_time_filter
+            A UUIDTimeRange object to filter the results by time using the id column.
+        query_params
 
         Returns
-        --------
+        -------
             List: List of similar records.
         """
         (query, params) = self.builder.search_query(
