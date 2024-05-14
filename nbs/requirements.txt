@@ -2,3 +2,4 @@ python-dotenv
 asyncpg
 psycopg2
 pgvector
+numpy
