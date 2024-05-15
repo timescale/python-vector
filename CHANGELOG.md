@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.5
+
+Added contains operator to support metadata array values.
+
 ## 0.0.4
 
 Various usability improvements.
