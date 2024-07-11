@@ -65,7 +65,7 @@ from datetime import datetime, timedelta
 Load up your PostgreSQL credentials. Safest way is with a .env file:
 
 ``` python
-_ = load_dotenv(find_dotenv(), override=True) 
+_ = load_dotenv(find_dotenv(), override=True)
 service_url  = os.environ['TIMESCALE_SERVICE_URL']
 ```
 
@@ -477,7 +477,7 @@ tpvec.search([1.0, 9.0], limit=4, filter={ "__start_date": specific_datetime, "_
       0.14489260377438218]]
 
 ``` python
-tpvec.search([1.0, 9.0], limit=4, 
+tpvec.search([1.0, 9.0], limit=4,
              predicates=client.Predicates("__uuid_timestamp", ">", specific_datetime) & client.Predicates("__uuid_timestamp", "<", specific_datetime+timedelta(days=1)))
 ```
 
@@ -826,7 +826,7 @@ Here are resources about using Timescale Vector with LlamaIndex:
   search](https://github.com/run-llama/llama-hub/tree/main/llama_hub/llama_packs/timescale_vector_autoretrieval):
   This pack demonstrates performing auto-retrieval for hybrid search
   based on both similarity and time, using the timescale-vector
-  (PostgreSQL) vectorstore.  
+  (PostgreSQL) vectorstore.
 - [Learn more about Timescale Vector and
   LlamaIndex](https://www.timescale.com/blog/timescale-vector-x-llamaindex-making-postgresql-a-better-vector-database-for-ai-applications/)
 
@@ -896,8 +896,8 @@ def get_document(blog):
         content = f"Author {blog['author']}, title: {blog['title']}, contents:{chunk}"
         metadata = {
             "id": str(client.uuid_from_time(blog['published_time'])),
-            "blog_id": blog['id'], 
-            "author": blog['author'], 
+            "blog_id": blog['id'],
+            "author": blog['author'],
             "category": blog['category'],
             "published_time": blog['published_time'].isoformat(),
         }
@@ -908,7 +908,7 @@ def embed_and_write(blog_instances, vectorizer):
     embedding = OpenAIEmbeddings()
     vector_store = TimescaleVector(
         collection_name="blog_embedding",
-        service_url=service_url,
+        service_url=vectorizer.service_url,
         embedding=embedding,
         time_partition_interval=timedelta(days=30),
     )
@@ -921,12 +921,12 @@ def embed_and_write(blog_instances, vectorizer):
     documents = []
     for blog in blog_instances:
         # skip blogs that are not published yet, or are deleted (in which case it will be NULL)
-        if blog['published_time'] != None:
+        if blog['published_time'] is not None:
             documents.extend(get_document(blog))
 
     if len(documents) == 0:
         return
-    
+
     texts = [d.page_content for d in documents]
     metadatas = [d.metadata for d in documents]
     ids = [d.metadata["id"] for d in documents]
