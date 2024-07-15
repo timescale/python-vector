@@ -602,7 +602,7 @@ class QueryBuilder:
                 )
         return '''
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS timescale_vector;
+CREATE EXTENSION IF NOT EXISTS vectorscale;
 
 
 CREATE TABLE IF NOT EXISTS {table_name} (
