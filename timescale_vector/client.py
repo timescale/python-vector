@@ -2,9 +2,9 @@
 
 # %% auto 0
 __all__ = ['SEARCH_RESULT_ID_IDX', 'SEARCH_RESULT_METADATA_IDX', 'SEARCH_RESULT_CONTENTS_IDX', 'SEARCH_RESULT_EMBEDDING_IDX',
-           'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'BaseIndex', 'IvfflatIndex', 'HNSWIndex',
-           'TimescaleVectorIndex', 'QueryParams', 'TimescaleVectorIndexParams', 'IvfflatIndexParams', 'HNSWIndexParams',
-           'UUIDTimeRange', 'Predicates', 'QueryBuilder', 'Async', 'Sync']
+           'SEARCH_RESULT_DISTANCE_IDX', 'uuid_from_time', 'BaseIndex', 'IvfflatIndex', 'HNSWIndex', 'DiskAnnIndex',
+           'QueryParams', 'DiskAnnIndexParams', 'IvfflatIndexParams', 'HNSWIndexParams', 'UUIDTimeRange', 'Predicates',
+           'QueryBuilder', 'Async', 'Sync']
 
 # %% ../nbs/00_vector.ipynb 5
 import asyncpg
@@ -153,44 +153,48 @@ class HNSWIndex(BaseIndex):
         return "CREATE INDEX {index_name} ON {table_name} USING hnsw ({column_name} {index_method}) {with_clause};"\
             .format(index_name=index_name_quoted, table_name=table_name_quoted, column_name=column_name_quoted, index_method=index_method, with_clause=with_clause)
 
-class TimescaleVectorIndex(BaseIndex):
+class DiskAnnIndex(BaseIndex):
     def __init__(self, 
-                 use_pq: Optional[bool] = None, 
-                 num_neighbors: Optional[int] = None, 
                  search_list_size: Optional[int] = None, 
+                 num_neighbors: Optional[int] = None, 
                  max_alpha: Optional[float] = None,
-                 pq_vector_length: Optional[int] = None,
+                 storage_layout: Optional[str] = None,
+                 num_dimensions: Optional[int] = None,
+                 num_bits_per_dimension: Optional[int] = None,
                  ) -> None:
         """
         Timescale's vector index.
         """
-        self.use_pq = use_pq
-        self.num_neighbors = num_neighbors
         self.search_list_size = search_list_size
+        self.num_neighbors = num_neighbors
         self.max_alpha = max_alpha
-        self.pq_vector_length = pq_vector_length
+        self.storage_layout = storage_layout
+        self.num_dimensions = num_dimensions
+        self.num_bits_per_dimension = num_bits_per_dimension
 
     def create_index_query(self, table_name_quoted:str, column_name_quoted: str, index_name_quoted: str, distance_type: str, num_records_callback: Callable[[], int]) -> str:
         if distance_type != "<=>":
             raise ValueError(f"Timescale's vector index only supports cosine distance, but distance_type was {distance_type}")
 
         with_clauses = []
-        if self.use_pq is not None:
-            with_clauses.append(f"use_pq = {self.use_pq}")
-        if self.num_neighbors is not None:
-            with_clauses.append(f"num_neighbors = {self.num_neighbors}")
         if self.search_list_size is not None:
             with_clauses.append(f"search_list_size = {self.search_list_size}")
+        if self.num_neighbors is not None:
+            with_clauses.append(f"num_neighbors = {self.num_neighbors}")
         if self.max_alpha is not None:
             with_clauses.append(f"max_alpha = {self.max_alpha}")
-        if self.pq_vector_length is not None:
-            with_clauses.append(f"pq_vector_length = {self.pq_vector_length}")
+        if self.storage_layout is not None:
+            with_clauses.append(f"storage_layout = {self.storage_layout}")
+        if self.num_dimensions is not None:
+            with_clauses.append(f"num_dimensions = {self.num_dimensions}")
+        if self.num_bits_per_dimension is not None:
+            with_clauses.append(f"num_bits_per_dimension = {self.num_bits_per_dimension}")
         
         with_clause = ""
         if len(with_clauses) > 0:
             with_clause = "WITH (" + ", ".join(with_clauses) + ")"
 
-        return "CREATE INDEX {index_name} ON {table_name} USING tsv ({column_name}) {with_clause};"\
+        return "CREATE INDEX {index_name} ON {table_name} USING diskann ({column_name}) {with_clause};"\
             .format(index_name=index_name_quoted, table_name=table_name_quoted, column_name=column_name_quoted, with_clause=with_clause)
 
 
@@ -202,9 +206,14 @@ class QueryParams:
     def get_statements(self) -> List[str]:
         return ["SET LOCAL " + key + " = " + str(value) for key, value in self.params.items()]
 
-class TimescaleVectorIndexParams(QueryParams):
-    def __init__(self, search_list_size: int) -> None:
-        super().__init__({"tsv.query_search_list_size": search_list_size})
+class DiskAnnIndexParams(QueryParams):
+    def __init__(self, search_list_size: Optional[int] = None, rescore: Optional[int] = None) -> None:
+        params = {}
+        if search_list_size is not None:
+            params["diskann.query_search_list_size"] = search_list_size
+        if rescore is not None:
+            params["diskann.query_rescore"] = rescore
+        super().__init__(params)
 
 class IvfflatIndexParams(QueryParams):
     def __init__(self, probes: int) -> None:
@@ -602,7 +611,7 @@ class QueryBuilder:
                 )
         return '''
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS timescale_vector;
+CREATE EXTENSION IF NOT EXISTS vectorscale;
 
 
 CREATE TABLE IF NOT EXISTS {table_name} (
