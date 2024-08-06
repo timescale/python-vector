@@ -200,7 +200,7 @@ class DiskAnnIndex(BaseIndex):
 
 # %% ../nbs/00_vector.ipynb 10
 class QueryParams:
-    def __init__(self, params: dict[str, Any]) -> None:
+    def __init__(self, params: Dict[str, Any]) -> None:
         self.params = params
     
     def get_statements(self) -> List[str]:
