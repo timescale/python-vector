@@ -477,7 +477,8 @@ class QueryBuilder:
             distance_type: str,
             id_type: str,
             time_partition_interval: Optional[timedelta],
-            infer_filters: bool) -> None:
+            infer_filters: bool,
+            schema_name: Optional[str]) -> None:
         """
         Initializes a base Vector object to generate queries for vector clients.
 
@@ -491,8 +492,15 @@ class QueryBuilder:
             The distance type for indexing.
         id_type
             The type of the id column. Can be either 'UUID' or 'TEXT'.
+        time_partition_interval
+            The time interval for partitioning the table (optional).
+        infer_filters
+            Whether to infer start and end times from the special __start_date and __end_date filters.
+        schema_name
+            The schema name for the table (optional, uses the database's default schema if not specified).
         """
         self.table_name = table_name
+        self.schema_name = schema_name
         self.num_dimensions = num_dimensions
         if distance_type == 'cosine' or distance_type == '<=>':
             self.distance_type = '<=>'
@@ -526,6 +534,12 @@ class QueryBuilder:
             str: The quoted identifier.
         """
         return '"{}"'.format(ident.replace('"', '""'))
+    
+    def _quoted_table_name(self):
+        if self.schema_name is not None:
+            return self._quote_ident(self.schema_name) + "." + self._quote_ident(self.table_name)
+        else:
+            return self._quote_ident(self.table_name)
 
     def get_row_exists_query(self):
         """
@@ -535,7 +549,7 @@ class QueryBuilder:
         -------
             str: The query to check for row existence.
         """
-        return "SELECT 1 FROM {table_name} LIMIT 1".format(table_name=self._quote_ident(self.table_name))
+        return "SELECT 1 FROM {table_name} LIMIT 1".format(table_name=self._quoted_table_name())
 
     def get_upsert_query(self):
         """
@@ -545,7 +559,7 @@ class QueryBuilder:
         -------
             str: The upsert query.
         """
-        return "INSERT INTO {table_name} (id, metadata, contents, embedding) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING".format(table_name=self._quote_ident(self.table_name))
+        return "INSERT INTO {table_name} (id, metadata, contents, embedding) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING".format(table_name=self._quoted_table_name())
 
     def get_approx_count_query(self):
         """
@@ -556,7 +570,7 @@ class QueryBuilder:
             str: the query.
         """
         # todo optimize with approx
-        return "SELECT COUNT(*) as cnt FROM {table_name}".format(table_name=self._quote_ident(self.table_name))
+        return "SELECT COUNT(*) as cnt FROM {table_name}".format(table_name=self._quoted_table_name())
 
     #| export
     def get_create_query(self):
@@ -606,7 +620,7 @@ class QueryBuilder:
                     time_partitioning_func=>'public.uuid_timestamp', 
                     chunk_time_interval => '{chunk_time_interval} seconds'::interval);
             '''.format(
-                table_name=self._quote_ident(self.table_name), 
+                table_name=self._quoted_table_name(), 
                 chunk_time_interval=str(self.time_partition_interval.total_seconds()),
                 )
         return '''
@@ -625,36 +639,42 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
 
 {hypertable_sql}
 '''.format(
-            table_name=self._quote_ident(self.table_name), 
+            table_name=self._quoted_table_name(), 
             id_type=self.id_type, 
             index_name=self._quote_ident(self.table_name+"_meta_idx"), 
             dimensions=self.num_dimensions,
             hypertable_sql=hypertable_sql,
             )
-
-    def _get_embedding_index_name(self):
+    
+    def _get_embedding_index_name_quoted(self):
         return self._quote_ident(self.table_name+"_embedding_idx")
+          
+    def _get_schema_qualified_embedding_index_name_quoted(self):
+        if self.schema_name is not None:
+            return self._quote_ident(self.schema_name)+"."+self._get_embedding_index_name_quoted()
+        else:
+            return self._get_embedding_index_name_quoted()
 
     def drop_embedding_index_query(self):
-        return "DROP INDEX IF EXISTS {index_name};".format(index_name=self._get_embedding_index_name())
+        return "DROP INDEX IF EXISTS {schema_qualified_index_name};".format(schema_qualified_index_name=self._get_schema_qualified_embedding_index_name_quoted())
 
     def delete_all_query(self):
-        return "TRUNCATE {table_name};".format(table_name=self._quote_ident(self.table_name))
+        return "TRUNCATE {table_name};".format(table_name=self._quoted_table_name())
 
     def delete_by_ids_query(self, ids: Union[List[uuid.UUID], List[str]]) -> Tuple[str, List]:
         query = "DELETE FROM {table_name} WHERE id = ANY($1::{id_type}[]);".format(
-            table_name=self._quote_ident(self.table_name), id_type=self.id_type)
+            table_name=self._quoted_table_name(), id_type=self.id_type)
         return (query, [ids])
 
     def delete_by_metadata_query(self, filter: Union[Dict[str, str], List[Dict[str, str]]]) -> Tuple[str, List]:
         params: List[Any] = []
         (where, params) = self._where_clause_for_filter(params, filter)
         query = "DELETE FROM {table_name} WHERE {where};".format(
-            table_name=self._quote_ident(self.table_name), where=where)
+            table_name=self._quoted_table_name(), where=where)
         return (query, params)
 
     def drop_table_query(self):
-        return "DROP TABLE IF EXISTS {table_name};".format(table_name=self._quote_ident(self.table_name))
+        return "DROP TABLE IF EXISTS {table_name};".format(table_name=self._quoted_table_name())
     
     def default_max_db_connection_query(self):
         """
@@ -679,8 +699,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             str: The index creation query.
         """
         column_name = "embedding"
-        index_name = self._get_embedding_index_name()
-        query = index.create_index_query(self._quote_ident(self.table_name), self._quote_ident(column_name), index_name, self.distance_type, num_records_callback)
+        index_name_quoted = self._get_embedding_index_name_quoted()
+        query = index.create_index_query(self._quoted_table_name(), self._quote_ident(column_name), index_name_quoted, self.distance_type, num_records_callback)
         return query
 
     def _where_clause_for_filter(self, params: List, filter: Optional[Union[Dict[str, str], List[Dict[str, str]]]]) -> Tuple[str, List]:
@@ -772,7 +792,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
            {where}
         {order_by_clause}
         LIMIT {limit}
-        '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quote_ident(self.table_name), limit=limit)
+        '''.format(distance=distance, order_by_clause=order_by_clause, where=where, table_name=self._quoted_table_name(), limit=limit)
         return (query, params)
 
 # %% ../nbs/00_vector.ipynb 18
@@ -787,6 +807,7 @@ class Async(QueryBuilder):
             time_partition_interval: Optional[timedelta] = None,
             max_db_connections: Optional[int] = None,
             infer_filters: bool = True,
+            schema_name: Optional[str] = None,
             ) -> None:
         """
         Initializes a async client for storing vector data.
@@ -803,9 +824,15 @@ class Async(QueryBuilder):
             The distance type for indexing.
         id_type
             The type of the id column. Can be either 'UUID' or 'TEXT'.
+        time_partition_interval
+            The time interval for partitioning the table (optional).
+        infer_filters
+            Whether to infer start and end times from the special __start_date and __end_date filters.
+        schema_name
+            The schema name for the table (optional, uses the database's default schema if not specified).
         """
         self.builder = QueryBuilder(
-            table_name, num_dimensions, distance_type, id_type, time_partition_interval, infer_filters)
+            table_name, num_dimensions, distance_type, id_type, time_partition_interval, infer_filters, schema_name)
         self.service_url = service_url
         self.pool = None
         self.max_db_connections = max_db_connections
@@ -1063,6 +1090,7 @@ class Sync:
             time_partition_interval: Optional[timedelta] = None,
             max_db_connections: Optional[int] = None,
             infer_filters: bool = True,
+            schema_name: Optional[str] = None,
             ) -> None:
         """
         Initializes a sync client for storing vector data.
@@ -1079,9 +1107,15 @@ class Sync:
             The distance type for indexing.
         id_type
             The type of the primary id column. Can be either 'UUID' or 'TEXT'.
+        time_partition_interval
+            The time interval for partitioning the table (optional).
+        infer_filters
+            Whether to infer start and end times from the special __start_date and __end_date filters.
+        schema_name
+            The schema name for the table (optional, uses the database's default schema if not specified).
         """
         self.builder = QueryBuilder(
-            table_name, num_dimensions, distance_type, id_type, time_partition_interval, infer_filters)
+            table_name, num_dimensions, distance_type, id_type, time_partition_interval, infer_filters, schema_name)
         self.service_url = service_url
         self.pool = None
         self.max_db_connections = max_db_connections

@@ -80,6 +80,9 @@ The client constructor takes three required arguments:
 | table_name     | Name of the table to use for storing the embeddings. Think of this as the collection name |
 | num_dimensions | Number of dimensions in the vector                                                        |
 
+You can also specify the schema name, distance type, primary key type,
+etc. as optional parameters. Please see the documentation for details.
+
 ``` python
 vec  = client.Sync(service_url, "my_data", 2)
 ```
