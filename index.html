@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.56">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Timescale Vector – timescale-vector</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Timescale Vector – timescale-vector">
+<meta property="og:description" content="Python library for storing vector data in Postgres">
+<meta property="og:site_name" content="timescale-vector">
+<meta name="twitter:title" content="Timescale Vector – timescale-vector">
+<meta name="twitter:description" content="Python library for storing vector data in Postgres">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">timescale-vector</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Timescale Vector</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Timescale Vector</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./vector.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Client</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./pgvectorizer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PgVectorizer</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tsv_python_getting_started_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tutorial: Timescale Vector (PostgreSQL) Python Client Library</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#install" id="toc-install" class="nav-link active" data-scroll-target="#install">Install</a></li>
+  <li><a href="#basic-usage" id="toc-basic-usage" class="nav-link" data-scroll-target="#basic-usage">Basic usage</a></li>
+  <li><a href="#advanced-usage" id="toc-advanced-usage" class="nav-link" data-scroll-target="#advanced-usage">Advanced usage</a>
+  <ul class="collapse">
+  <li><a href="#search-options" id="toc-search-options" class="nav-link" data-scroll-target="#search-options">Search options</a></li>
+  <li><a href="#indexing" id="toc-indexing" class="nav-link" data-scroll-target="#indexing">Indexing</a></li>
+  <li><a href="#time-partitioning" id="toc-time-partitioning" class="nav-link" data-scroll-target="#time-partitioning">Time partitioning</a></li>
+  <li><a href="#distance-metrics" id="toc-distance-metrics" class="nav-link" data-scroll-target="#distance-metrics">Distance metrics</a></li>
+  </ul></li>
+  <li><a href="#langchain-integration" id="toc-langchain-integration" class="nav-link" data-scroll-target="#langchain-integration">LangChain integration</a></li>
+  <li><a href="#llamaindex-integration" id="toc-llamaindex-integration" class="nav-link" data-scroll-target="#llamaindex-integration">LlamaIndex integration</a></li>
+  <li><a href="#pgvectorize" id="toc-pgvectorize" class="nav-link" data-scroll-target="#pgvectorize">PgVectorize</a>
+  <ul class="collapse">
+  <li><a href="#development" id="toc-development" class="nav-link" data-scroll-target="#development">Development</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/timescale/python-vector/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Timescale Vector</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>PostgreSQL++ for AI Applications.</p>
+<ul>
+<li><a href="https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">Signup for Timescale Vector</a>: Get 90 days free to try Timescale Vector on the Timescale cloud data platform. There is no self-managed version at this time.</li>
+<li><a href="https://timescale.github.io/python-vector/">Documentation</a>: Learn the key features of Timescale Vector and how to use them.</li>
+<li><a href="https://timescale.github.io/python-vector/tsv_python_getting_started_tutorial.html">Getting Started Tutorial</a>: Learn how to use Timescale Vector for semantic search on a real-world dataset.</li>
+<li><a href="https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">Learn more</a>: Learn more about Timescale Vector, how it works and why we built it.</li>
+</ul>
+<p>If you prefer to use an LLM development or data framework, see Timescale Vector’s integrations with <a href="https://python.langchain.com/docs/integrations/vectorstores/timescalevector">LangChain</a> and <a href="https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/Timescalevector.html">LlamaIndex</a></p>
+<section id="install" class="level2">
+<h2 class="anchored" data-anchor-id="install">Install</h2>
+<p>To install the main library use:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install timescale_vector</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We also use <code>dotenv</code> in our examples for passing around secrets and keys. You can install that with:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install python-dotenv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If you run into installation errors related to the psycopg2 package, you will need to install some prerequisites. The timescale-vector package explicitly depends on psycopg2 (the non-binary version). This adheres to <a href="https://www.psycopg.org/docs/install.html#psycopg-vs-psycopg-binary">the advice provided by psycopg2</a>. Building psycopg from source <a href="https://www.psycopg.org/docs/install.html#build-prerequisites">requires a few prerequisites to be installed</a>. Make sure these are installed before trying to <code>pip install timescale_vector</code>.</p>
+</section>
+<section id="basic-usage" class="level2">
+<h2 class="anchored" data-anchor-id="basic-usage">Basic usage</h2>
+<p>First, import all the necessary libraries:</p>
+<div id="cell-6" class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv, find_dotenv</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> timescale_vector <span class="im">import</span> client</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> uuid</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime, timedelta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Load up your PostgreSQL credentials. Safest way is with a .env file:</p>
+<div id="cell-8" class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>_ <span class="op">=</span> load_dotenv(find_dotenv(), override<span class="op">=</span><span class="va">True</span>) </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>service_url  <span class="op">=</span> os.environ[<span class="st">'TIMESCALE_SERVICE_URL'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, create the client. In this tutorial, we will use the sync client. But we have an async client as well (with an identical interface that uses async functions).</p>
+<p>The client constructor takes three required arguments:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>name</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>service_url</td>
+<td>Timescale service URL / connection string</td>
+</tr>
+<tr class="even">
+<td>table_name</td>
+<td>Name of the table to use for storing the embeddings. Think of this as the collection name</td>
+</tr>
+<tr class="odd">
+<td>num_dimensions</td>
+<td>Number of dimensions in the vector</td>
+</tr>
+</tbody>
+</table>
+<p>You can also specify the schema name, distance type, primary key type, etc. as optional parameters. Please see the documentation for details.</p>
+<div id="cell-10" class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>vec  <span class="op">=</span> client.Sync(service_url, <span class="st">"my_data"</span>, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, create the tables for the collection:</p>
+<div id="cell-12" class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>vec.create_tables()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, insert some data. The data record contains:</p>
+<ul>
+<li>A UUID to uniquely identify the embedding</li>
+<li>A JSON blob of metadata about the embedding</li>
+<li>The text the embedding represents</li>
+<li>The embedding itself</li>
+</ul>
+<p>Because this data includes UUIDs which become primary keys, we ingest with upserts.</p>
+<div id="cell-14" class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>vec.upsert([<span class="op">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid1(), {<span class="st">"animal"</span>: <span class="st">"fox"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>,<span class="fl">1.3</span>]),<span class="op">\</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid1(), {<span class="st">"animal"</span>: <span class="st">"fox"</span>, <span class="st">"action"</span>:<span class="st">"jump"</span>}, <span class="st">"jumped over the"</span>, [<span class="fl">1.0</span>,<span class="fl">10.8</span>]),<span class="op">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can now create a vector index to speed up similarity search:</p>
+<div id="cell-16" class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.DiskAnnIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now, you can query for similar items:</p>
+<div id="cell-18" class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('4494c186-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('4494c12c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>There are many search options which we will cover below in the <code>Advanced search</code> section.</p>
+<p>As one example, we will return one item using a similarity search constrained by a metadata filter.</p>
+<div id="cell-20" class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">1</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"action"</span>: <span class="st">"jump"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('4494c186-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<p>The returned records contain 5 fields:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>name</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>id</td>
+<td>The UUID of the record</td>
+</tr>
+<tr class="even">
+<td>metadata</td>
+<td>The JSON metadata associated with the record</td>
+</tr>
+<tr class="odd">
+<td>contents</td>
+<td>the text content that was embedded</td>
+</tr>
+<tr class="even">
+<td>embedding</td>
+<td>The vector embedding</td>
+</tr>
+<tr class="odd">
+<td>distance</td>
+<td>The distance between the query embedding and the vector</td>
+</tr>
+</tbody>
+</table>
+<p>You can access the fields by simply using the record as a dictionary keyed on the field name:</p>
+<div id="cell-22" class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>records <span class="op">=</span> vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">1</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"action"</span>: <span class="st">"jump"</span>})</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>(records[<span class="dv">0</span>][<span class="st">"id"</span>],records[<span class="dv">0</span>][<span class="st">"metadata"</span>], records[<span class="dv">0</span>][<span class="st">"contents"</span>], records[<span class="dv">0</span>][<span class="st">"embedding"</span>], records[<span class="dv">0</span>][<span class="st">"distance"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>(UUID('4494c186-4a0d-11ef-94a3-6ee10b77fd09'),
+ {'action': 'jump', 'animal': 'fox'},
+ 'jumped over the',
+ array([ 1. , 10.8], dtype=float32),
+ 0.00016793422934946456)</code></pre>
+</div>
+</div>
+<p>You can delete by ID:</p>
+<div id="cell-24" class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>vec.delete_by_ids([records[<span class="dv">0</span>][<span class="st">"id"</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Or you can delete by metadata filters:</p>
+<div id="cell-26" class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>vec.delete_by_metadata({<span class="st">"action"</span>: <span class="st">"jump"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To delete all records use:</p>
+<div id="cell-28" class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>vec.delete_all()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="advanced-usage" class="level2">
+<h2 class="anchored" data-anchor-id="advanced-usage">Advanced usage</h2>
+<p>In this section, we will go into more detail about our feature. We will cover:</p>
+<ol type="1">
+<li>Search filter options - how to narrow your search by additional constraints</li>
+<li>Indexing - how to speed up your similarity queries</li>
+<li>Time-based partitioning - how to optimize similarity queries that filter on time</li>
+<li>Setting different distance types to use in distance calculations</li>
+</ol>
+<section id="search-options" class="level3">
+<h3 class="anchored" data-anchor-id="search-options">Search options</h3>
+<p>The <code>search</code> function is very versatile and allows you to search for the right vector in a wide variety of ways. We’ll describe the search option in 3 parts:</p>
+<ol type="1">
+<li>We’ll cover basic similarity search.</li>
+<li>Then, we’ll describe how to filter your search based on the associated metadata.</li>
+<li>Finally, we’ll talk about filtering on time when time-partitioning is enabled.</li>
+</ol>
+<p>Let’s use the following data for our example:</p>
+<div id="cell-31" class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>vec.upsert([<span class="op">\</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid1(), {<span class="st">"animal"</span>:<span class="st">"fox"</span>, <span class="st">"action"</span>: <span class="st">"sit"</span>, <span class="st">"times"</span>:<span class="dv">1</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>,<span class="fl">1.3</span>]),<span class="op">\</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    (uuid.uuid1(),  {<span class="st">"animal"</span>:<span class="st">"fox"</span>, <span class="st">"action"</span>: <span class="st">"jump"</span>, <span class="st">"times"</span>:<span class="dv">100</span>}, <span class="st">"jumped over the"</span>, [<span class="fl">1.0</span>,<span class="fl">10.8</span>]),<span class="op">\</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The basic query looks like:</p>
+<div id="cell-33" class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('456dbb6c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>You could provide a limit for the number of items returned:</p>
+<div id="cell-35" class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<section id="narrowing-your-search-by-metadata" class="level4">
+<h4 class="anchored" data-anchor-id="narrowing-your-search-by-metadata">Narrowing your search by metadata</h4>
+<p>We have two main ways to filter results by metadata: - <code>filters</code> for equality matches on metadata. - <code>predicates</code> for complex conditions on metadata.</p>
+<p>Filters are more likely to be performant but are more limited in what they can express, so we suggest using those if your use case allows it.</p>
+<section id="filters" class="level5">
+<h5 class="anchored" data-anchor-id="filters">Filters</h5>
+<p>You could specify a match on the metadata as a dictionary where all keys have to match the provided values (keys not in the filter are unconstrained):</p>
+<div id="cell-37" class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">1</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"action"</span>: <span class="st">"sit"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbb6c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>You can also specify a list of filter dictionaries, where an item is returned if it matches any dict:</p>
+<div id="cell-39" class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, <span class="bu">filter</span><span class="op">=</span>[{<span class="st">"action"</span>: <span class="st">"jump"</span>}, {<span class="st">"animal"</span>: <span class="st">"fox"</span>}])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('456dbb6c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+</section>
+<section id="predicates" class="level5">
+<h5 class="anchored" data-anchor-id="predicates">Predicates</h5>
+<p>Predicates allow for more complex search conditions. For example, you could use greater than and less than conditions on numeric values.</p>
+<div id="cell-41" class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, predicates<span class="op">=</span>client.Predicates(<span class="st">"times"</span>, <span class="st">"&gt;"</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<p><a href="https://timescale.github.io/python-vector/vector.html#predicates"><code>Predicates</code></a> objects are defined by the name of the metadata key, an operator, and a value.</p>
+<p>The supported operators are: <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code></p>
+<p>The type of the values determines the type of comparison to perform. For example, passing in <code>"Sam"</code> (a string) will do a string comparison while a <code>10</code> (an int) will perform an integer comparison while a <code>10.0</code> (float) will do a float comparison. It is important to note that using a value of <code>"10"</code> will do a string comparison as well so it’s important to use the right type. Supported Python types are: <code>str</code>, <code>int</code>, and <code>float</code>. One more example with a string comparison:</p>
+<div id="cell-43" class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, predicates<span class="op">=</span>client.Predicates(<span class="st">"action"</span>, <span class="st">"=="</span>, <span class="st">"jump"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<p>The real power of predicates is that they can also be combined using the <code>&amp;</code> operator (for combining predicates with AND semantics) and <code>|</code>(for combining using OR semantic). So you can do:</p>
+<div id="cell-45" class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, predicates<span class="op">=</span>client.Predicates(<span class="st">"action"</span>, <span class="st">"=="</span>, <span class="st">"jump"</span>) <span class="op">&amp;</span> client.Predicates(<span class="st">"times"</span>, <span class="st">"&gt;"</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<p>Just for sanity, let’s show a case where no results are returned because or predicates:</p>
+<div id="cell-47" class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, predicates<span class="op">=</span>client.Predicates(<span class="st">"action"</span>, <span class="st">"=="</span>, <span class="st">"jump"</span>) <span class="op">&amp;</span> client.Predicates(<span class="st">"times"</span>, <span class="st">"=="</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[]</code></pre>
+</div>
+</div>
+<p>And one more example where we define the predicates as a variable and use grouping with parenthesis:</p>
+<div id="cell-49" class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>my_predicates <span class="op">=</span> client.Predicates(<span class="st">"action"</span>, <span class="st">"=="</span>, <span class="st">"jump"</span>) <span class="op">&amp;</span> (client.Predicates(<span class="st">"times"</span>, <span class="st">"=="</span>, <span class="dv">1</span>) <span class="op">|</span> client.Predicates(<span class="st">"times"</span>, <span class="st">"&gt;"</span>, <span class="dv">1</span>))</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, predicates<span class="op">=</span>my_predicates)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<p>We also have some semantic sugar for combining many predicates with AND semantics. You can pass in multiple 3-tuples to <a href="https://timescale.github.io/python-vector/vector.html#predicates"><code>Predicates</code></a>:</p>
+<div id="cell-51" class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">2</span>, predicates<span class="op">=</span>client.Predicates((<span class="st">"action"</span>, <span class="st">"=="</span>, <span class="st">"jump"</span>), (<span class="st">"times"</span>, <span class="st">"&gt;"</span>, <span class="dv">10</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="filter-your-search-by-time" class="level4">
+<h4 class="anchored" data-anchor-id="filter-your-search-by-time">Filter your search by time</h4>
+<p>When using <code>time-partitioning</code>(see below). You can very efficiently filter your search by time. Time-partitioning makes a timestamp embedded as part of the UUID-based ID associated with an embedding. Let us first create a collection with time partitioning and insert some data (one item from January 2018 and another in January 2019):</p>
+<div id="cell-53" class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>tpvec <span class="op">=</span> client.Sync(service_url, <span class="st">"time_partitioned_table"</span>, <span class="dv">2</span>, time_partition_interval<span class="op">=</span>timedelta(hours<span class="op">=</span><span class="dv">6</span>))</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>tpvec.create_tables()</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>specific_datetime <span class="op">=</span> datetime(<span class="dv">2018</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">12</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>tpvec.upsert([<span class="op">\</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    (client.uuid_from_time(specific_datetime), {<span class="st">"animal"</span>:<span class="st">"fox"</span>, <span class="st">"action"</span>: <span class="st">"sit"</span>, <span class="st">"times"</span>:<span class="dv">1</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>,<span class="fl">1.3</span>]),<span class="op">\</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>    (client.uuid_from_time(specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">365</span>)),  {<span class="st">"animal"</span>:<span class="st">"fox"</span>, <span class="st">"action"</span>: <span class="st">"jump"</span>, <span class="st">"times"</span>:<span class="dv">100</span>}, <span class="st">"jumped over the"</span>, [<span class="fl">1.0</span>,<span class="fl">10.8</span>]),<span class="op">\</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, you can filter using the timestamps by specifing a <code>uuid_time_filter</code>:</p>
+<div id="cell-55" class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>tpvec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>client.UUIDTimeRange(specific_datetime, specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">1</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('33c52800-ef15-11e7-8a12-ea51d07b6447'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>A <a href="https://timescale.github.io/python-vector/vector.html#uuidtimerange"><code>UUIDTimeRange</code></a> can specify a start_date or end_date or both(as in the example above). Specifying only the start_date or end_date leaves the other end unconstrained.</p>
+<div id="cell-57" class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>tpvec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>client.UUIDTimeRange(start_date<span class="op">=</span>specific_datetime))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('ac8be800-0de6-11e9-a5fd-5a100e653c25'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('33c52800-ef15-11e7-8a12-ea51d07b6447'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>You have the option to define the inclusivity of the start and end dates with the <code>start_inclusive</code> and <code>end_inclusive</code> parameters. Setting <code>start_inclusive</code> to true results in comparisons using the <code>&gt;=</code> operator, whereas setting it to false applies the <code>&gt;</code> operator. By default, the start date is inclusive, while the end date is exclusive. One example:</p>
+<div id="cell-59" class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>tpvec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>client.UUIDTimeRange(start_date<span class="op">=</span>specific_datetime, start_inclusive<span class="op">=</span><span class="va">False</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('ac8be800-0de6-11e9-a5fd-5a100e653c25'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456]]</code></pre>
+</div>
+</div>
+<p>Notice how the results are different when we use the <code>start_inclusive=False</code> option because the first row has the exact timestamp specified by <code>start_date</code>.</p>
+<p>We’ve also made it easy to integrate time filters using the <code>filter</code> and <code>predicates</code> parameters described above using special reserved key names to make it appear that the timestamps are part of your metadata. We found this useful when integrating with other systems that just want to specify a set of filters (often these are “auto retriever” type systems). The reserved key names are <code>__start_date</code> and <code>__end_date</code> for filters and <code>__uuid_timestamp</code> for predicates. Some examples below:</p>
+<div id="cell-61" class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>tpvec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, <span class="bu">filter</span><span class="op">=</span>{ <span class="st">"__start_date"</span>: specific_datetime, <span class="st">"__end_date"</span>: specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">1</span>)})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('33c52800-ef15-11e7-8a12-ea51d07b6447'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<div id="cell-62" class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>tpvec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>             predicates<span class="op">=</span>client.Predicates(<span class="st">"__uuid_timestamp"</span>, <span class="st">"&gt;="</span>, specific_datetime) <span class="op">&amp;</span> client.Predicates(<span class="st">"__uuid_timestamp"</span>, <span class="st">"&lt;"</span>, specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">1</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('33c52800-ef15-11e7-8a12-ea51d07b6447'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="indexing" class="level3">
+<h3 class="anchored" data-anchor-id="indexing">Indexing</h3>
+<p>Indexing speeds up queries over your data. By default, we set up indexes to query your data by the UUID and the metadata.</p>
+<p>But to speed up similarity search based on the embeddings, you have to create additional indexes.</p>
+<p>Note that if performing a query without an index, you will always get an exact result, but the query will be slow (it has to read all of the data you store for every query). With an index, your queries will be order-of-magnitude faster, but the results are approximate (because there are no known indexing techniques that are exact).</p>
+<p>Nevertheless, there are excellent approximate algorithms. There are 3 different indexing algorithms available on the Timescale platform: Timescale Vector index, pgvector HNSW, and pgvector ivfflat. Below are the trade-offs between these algorithms:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Algorithm</th>
+<th>Build speed</th>
+<th>Query speed</th>
+<th>Need to rebuild after updates</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>StreamingDiskANN</td>
+<td>Fast</td>
+<td>Fastest</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>pgvector hnsw</td>
+<td>Slowest</td>
+<td>Faster</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>pgvector ivfflat</td>
+<td>Fastest</td>
+<td>Slowest</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>You can see <a href="https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/">benchmarks</a> on our blog.</p>
+<p>We recommend using the Timescale Vector index for most use cases. This can be created with:</p>
+<div id="cell-64" class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.DiskAnnIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Indexes are created for a particular distance metric type. So it is important that the same distance metric is set on the client during index creation as it is during queries. See the <code>distance type</code> section below.</p>
+<p>Each of these indexes has a set of build-time options for controlling the speed/accuracy trade-off when creating the index and an additional query-time option for controlling accuracy during a particular query. We have smart defaults for all of these options but will also describe the details below so that you can adjust these options manually.</p>
+<section id="streamingdiskann-index" class="level4">
+<h4 class="anchored" data-anchor-id="streamingdiskann-index">StreamingDiskANN index</h4>
+<p>The StreamingDiskANN index from pgvectorscale is a graph-based algorithm that uses the <a href="https://github.com/microsoft/DiskANN">DiskANN</a> algorithm. You can read more about it on our <a href="https://www.timescale.com/blog/how-we-made-postgresql-as-fast-as-pinecone-for-vector-data/">blog</a> announcing its release.</p>
+<p>To create this index, run:</p>
+<div id="cell-67" class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.DiskAnnIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The above command will create the index using smart defaults. There are a number of parameters you could tune to adjust the accuracy/speed trade-off.</p>
+<p>The parameters you can set at index build time are:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter name</th>
+<th>Description</th>
+<th>Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>storage_layout</code></td>
+<td><code>memory_optimized</code> which uses SBQ to compress vector data or <code>plain</code> which stores data uncompressed</td>
+<td>memory_optimized</td>
+</tr>
+<tr class="even">
+<td><code>num_neighbors</code></td>
+<td>Sets the maximum number of neighbors per node. Higher values increase accuracy but make the graph traversal slower.</td>
+<td>50</td>
+</tr>
+<tr class="odd">
+<td><code>search_list_size</code></td>
+<td>This is the S parameter used in the greedy search algorithm used during construction. Higher values improve graph quality at the cost of slower index builds.</td>
+<td>100</td>
+</tr>
+<tr class="even">
+<td><code>max_alpha</code></td>
+<td>Is the alpha parameter in the algorithm. Higher values improve graph quality at the cost of slower index builds.</td>
+<td>1.2</td>
+</tr>
+<tr class="odd">
+<td><code>num_dimensions</code></td>
+<td>The number of dimensions to index. By default, all dimensions are indexed. But you can also index less dimensions to make use of <a href="https://huggingface.co/blog/matryoshka">Matryoshka embeddings</a></td>
+<td>0 (all dimensions)</td>
+</tr>
+<tr class="even">
+<td><code>num_bits_per_dimension</code></td>
+<td>Number of bits used to encode each dimension when using SBQ</td>
+<td>2 for less than 900 dimensions, 1 otherwise</td>
+</tr>
+</tbody>
+</table>
+<p>To set these parameters, you could run:</p>
+<div id="cell-69" class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.DiskAnnIndex(num_neighbors<span class="op">=</span><span class="dv">50</span>, search_list_size<span class="op">=</span><span class="dv">100</span>, max_alpha<span class="op">=</span><span class="fl">1.0</span>, storage_layout<span class="op">=</span><span class="st">"memory_optimized"</span>, num_dimensions<span class="op">=</span><span class="dv">0</span>, num_bits_per_dimension<span class="op">=</span><span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can also set a parameter to control the accuracy vs.&nbsp;query speed trade-off at query time. The parameter is set in the <code>search()</code> function using the <code>query_params</code> argment.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 82%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter name</th>
+<th>Description</th>
+<th>Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>search_list_size</code></td>
+<td>The number of additional candidates considered during the graph search.</td>
+<td>100</td>
+</tr>
+<tr class="even">
+<td><code>rescore</code></td>
+<td>The number of elements rescored (0 to disable rescoring)</td>
+<td>50</td>
+</tr>
+</tbody>
+</table>
+<p>We suggest using the <code>rescore</code> parameter to fine-tune accuracy.</p>
+<div id="cell-71" class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>client.DiskAnnIndexParams(rescore<span class="op">=</span><span class="dv">400</span>, search_list_size<span class="op">=</span><span class="dv">10</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('456dbb6c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>To drop the index, run:</p>
+<div id="cell-73" class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="pgvector-hnsw-index" class="level4">
+<h4 class="anchored" data-anchor-id="pgvector-hnsw-index">pgvector HNSW index</h4>
+<p>Pgvector provides a graph-based indexing algorithm based on the popular <a href="https://arxiv.org/abs/1603.09320">HNSW algorithm</a>.</p>
+<p>To create this index, run:</p>
+<div id="cell-75" class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.HNSWIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The above command will create the index using smart defaults. There are a number of parameters you could tune to adjust the accuracy/speed trade-off.</p>
+<p>The parameters you can set at index build time are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 82%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter name</th>
+<th>Description</th>
+<th>Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>m</td>
+<td>Represents the maximum number of connections per layer. Think of these connections as edges created for each node during graph construction. Increasing m increases accuracy but also increases index build time and size.</td>
+<td>16</td>
+</tr>
+<tr class="even">
+<td>ef_construction</td>
+<td>Represents the size of the dynamic candidate list for constructing the graph. It influences the trade-off between index quality and construction speed. Increasing ef_construction enables more accurate search results at the expense of lengthier index build times.</td>
+<td>64</td>
+</tr>
+</tbody>
+</table>
+<p>To set these parameters, you could run:</p>
+<div id="cell-77" class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.HNSWIndex(m<span class="op">=</span><span class="dv">16</span>, ef_construction<span class="op">=</span><span class="dv">64</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can also set a parameter to control the accuracy vs.&nbsp;query speed trade-off at query time. The parameter is set in the <code>search()</code> function using the <code>query_params</code> argument. You can set the <code>ef_search</code>(default: 40). This parameter specifies the size of the dynamic candidate list used during search. Higher values improve query accuracy while making the query slower.</p>
+<p>You can specify this value during search as follows:</p>
+<div id="cell-79" class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>client.HNSWIndexParams(ef_search<span class="op">=</span><span class="dv">10</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('456dbb6c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>To drop the index run:</p>
+<div id="cell-81" class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="pgvector-ivfflat-index" class="level4">
+<h4 class="anchored" data-anchor-id="pgvector-ivfflat-index">pgvector ivfflat index</h4>
+<p>Pgvector provides a clustering-based indexing algorithm. Our <a href="https://www.timescale.com/blog/nearest-neighbor-indexes-what-are-ivfflat-indexes-in-pgvector-and-how-do-they-work/">blog post</a> describes how it works in detail. It provides the fastest index-build speed but the slowest query speeds of any indexing algorithm.</p>
+<p>To create this index, run:</p>
+<div id="cell-83" class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.IvfflatIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note: <em>ivfflat should never be created on empty tables</em> because it needs to cluster data, and that only happens when an index is first created, not when new rows are inserted or modified. Also, if your table undergoes a lot of modifications, you will need to rebuild this index occasionally to maintain good accuracy. See our <a href="https://www.timescale.com/blog/nearest-neighbor-indexes-what-are-ivfflat-indexes-in-pgvector-and-how-do-they-work/">blog post</a> for details.</p>
+<p>Pgvector ivfflat has a <code>lists</code> index parameter that is automatically set with a smart default based on the number of rows in your table. If you know that you’ll have a different table size, you can specify the number of records to use for calculating the <code>lists</code> parameter as follows:</p>
+<div id="cell-85" class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.IvfflatIndex(num_records<span class="op">=</span><span class="dv">1000000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can also set the <code>lists</code> parameter directly:</p>
+<div id="cell-87" class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>vec.create_embedding_index(client.IvfflatIndex(num_lists<span class="op">=</span><span class="dv">100</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can also set a parameter to control the accuracy vs.&nbsp;query speed trade-off at query time. The parameter is set in the <code>search()</code> function using the <code>query_params</code> argument. You can set the <code>probes</code>. This parameter specifies the number of clusters searched during a query. It is recommended to set this parameter to <code>sqrt(lists)</code> where lists is the <code>num_list</code> parameter used above during index creation. Higher values improve query accuracy while making the query slower.</p>
+<p>You can specify this value during search as follows:</p>
+<div id="cell-89" class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>vec.search([<span class="fl">1.0</span>, <span class="fl">9.0</span>], limit<span class="op">=</span><span class="dv">4</span>, query_params<span class="op">=</span>client.IvfflatIndexParams(probes<span class="op">=</span><span class="dv">10</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[[UUID('456dbbbc-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 100, 'action': 'jump', 'animal': 'fox'},
+  'jumped over the',
+  array([ 1. , 10.8], dtype=float32),
+  0.00016793422934946456],
+ [UUID('456dbb6c-4a0d-11ef-94a3-6ee10b77fd09'),
+  {'times': 1, 'action': 'sit', 'animal': 'fox'},
+  'the brown fox',
+  array([1. , 1.3], dtype=float32),
+  0.14489260377438218]]</code></pre>
+</div>
+</div>
+<p>To drop the index, run:</p>
+<div id="cell-91" class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>vec.drop_embedding_index()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="time-partitioning" class="level3">
+<h3 class="anchored" data-anchor-id="time-partitioning">Time partitioning</h3>
+<p>In many use cases where you have many embeddings, time is an important component associated with the embeddings. For example, when embedding news stories, you often search by time as well as similarity (e.g., stories related to Bitcoin in the past week or stories about Clinton in November 2016).</p>
+<p>Yet, traditionally, searching by two components “similarity” and “time” is challenging for Approximate Nearest Neighbor (ANN) indexes and makes the similarity-search index less effective.</p>
+<p>One approach to solving this is partitioning the data by time and creating ANN indexes on each partition individually. Then, during search, you can:</p>
+<ul>
+<li>Step 1: filter our partitions that don’t match the time predicate.</li>
+<li>Step 2: perform the similarity search on all matching partitions.</li>
+<li>Step 3: combine all the results from each partition in step 2, rerank, and filter out results by time.</li>
+</ul>
+<p>Step 1 makes the search a lot more efficient by filtering out whole swaths of data in one go.</p>
+<p>Timescale-vector supports time partitioning using TimescaleDB’s hypertables. To use this feature, simply indicate the length of time for each partition when creating the client:</p>
+<div id="cell-93" class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> timedelta</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-94" class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> client.Async(service_url, <span class="st">"my_data_with_time_partition"</span>, <span class="dv">2</span>, time_partition_interval<span class="op">=</span>timedelta(hours<span class="op">=</span><span class="dv">6</span>))</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_tables()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, insert data where the IDs use UUIDs v1 and the time component of the UUID specifies the time of the embedding. For example, to create an embedding for the current time, simply do:</p>
+<div id="cell-96" class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="bu">id</span> <span class="op">=</span> uuid.uuid1()</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([(<span class="bu">id</span>, {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To insert data for a specific time in the past, create the UUID using our <a href="https://timescale.github.io/python-vector/vector.html#uuid_from_time"><code>uuid_from_time</code></a> function</p>
+<div id="cell-98" class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>specific_datetime <span class="op">=</span> datetime(<span class="dv">2018</span>, <span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">30</span>, <span class="dv">0</span>)</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert([(client.uuid_from_time(specific_datetime), {<span class="st">"key"</span>: <span class="st">"val"</span>}, <span class="st">"the brown fox"</span>, [<span class="fl">1.0</span>, <span class="fl">1.2</span>])])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can then query the data by specifying a <code>uuid_time_filter</code> in the search call:</p>
+<div id="cell-100" class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>rec <span class="op">=</span> <span class="cf">await</span> vec.search([<span class="fl">1.0</span>, <span class="fl">2.0</span>], limit<span class="op">=</span><span class="dv">4</span>, uuid_time_filter<span class="op">=</span>client.UUIDTimeRange(specific_datetime<span class="op">-</span>timedelta(days<span class="op">=</span><span class="dv">7</span>), specific_datetime<span class="op">+</span>timedelta(days<span class="op">=</span><span class="dv">7</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="distance-metrics" class="level3">
+<h3 class="anchored" data-anchor-id="distance-metrics">Distance metrics</h3>
+<p>By default, we use cosine distance to measure how similarly an embedding is to a given query. In addition to cosine distance, we also support Euclidean/L2 distance. The distance type is set when creating the client using the <code>distance_type</code> parameter. For example, to use the Euclidean distance metric, you can create the client with:</p>
+<div id="cell-102" class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>vec  <span class="op">=</span> client.Sync(service_url, <span class="st">"my_data"</span>, <span class="dv">2</span>, distance_type<span class="op">=</span><span class="st">"euclidean"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Valid values for <code>distance_type</code> are <code>cosine</code> and <code>euclidean</code>.</p>
+<p>It is important to note that you should use consistent distance types on clients that create indexes and perform queries. That is because an index is only valid for one particular type of distance measure.</p>
+<p>Please note the Timescale Vector index only supports cosine distance at this time.</p>
+</section>
+</section>
+<section id="langchain-integration" class="level1">
+<h1>LangChain integration</h1>
+<p><a href="https://www.langchain.com/">LangChain</a> is a popular framework for development applications powered by LLMs. Timescale Vector has a native LangChain integration, enabling you to use Timescale Vector as a vectorstore and leverage all its capabilities in your applications built with LangChain.</p>
+<p>Here are resources about using Timescale Vector with LangChain:</p>
+<ul>
+<li><a href="https://python.langchain.com/docs/integrations/vectorstores/timescalevector">Getting started with LangChain and Timescale Vector</a>: You’ll learn how to use Timescale Vector for (1) semantic search, (2) time-based vector search, (3) self-querying, and (4) how to create indexes to speed up queries.</li>
+<li><a href="https://python.langchain.com/docs/integrations/retrievers/self_query/timescalevector_self_query">PostgreSQL Self Querying</a>: Learn how to use Timescale Vector with self-querying in LangChain.</li>
+<li><a href="https://github.com/langchain-ai/langchain/tree/master/templates/rag-timescale-conversation">LangChain template: RAG with conversational retrieval</a>: This template is used for conversational retrieval, which is one of the most popular LLM use-cases. It passes both a conversation history and retrieved documents into an LLM for synthesis.</li>
+<li><a href="https://github.com/langchain-ai/langchain/tree/master/templates/rag-timescale-hybrid-search-time">LangChain template: RAG with time-based search and self-query retrieval</a>:This template shows how to use timescale-vector with the self-query retriver to perform hybrid search on similarity and time. This is useful any time your data has a strong time-based component.</li>
+<li><a href="https://blog.langchain.dev/timescale-vector-x-langchain-making-postgresql-a-better-vector-database-for-ai-applications/">Learn more about Timescale Vector and LangChain</a></li>
+</ul>
+</section>
+<section id="llamaindex-integration" class="level1">
+<h1>LlamaIndex integration</h1>
+<p>[LlamaIndex] is a popular data framework for connecting custom data sources to large language models (LLMs). Timescale Vector has a native LlamaIndex integration, enabling you to use Timescale Vector as a vectorstore and leverage all its capabilities in your applications built with LlamaIndex.</p>
+<p>Here are resources about using Timescale Vector with LlamaIndex:</p>
+<ul>
+<li><a href="https://docs.llamaindex.ai/en/stable/examples/vector_stores/Timescalevector.html">Getting started with LlamaIndex and Timescale Vector</a>: You’ll learn how to use Timescale Vector for (1) similarity search, (2) time-based vector search, (3) faster search with indexes, and (4) retrieval and query engine.</li>
+<li><a href="https://youtu.be/EYMZVfKcRzM?si=I0H3uUPgzKbQw__W">Time-based retrieval</a>: Learn how to power RAG applications with time-based retrieval.</li>
+<li><a href="https://github.com/run-llama/llama-hub/tree/main/llama_hub/llama_packs/timescale_vector_autoretrieval">Llama Pack: Auto Retrieval with time-based search</a>: This pack demonstrates performing auto-retrieval for hybrid search based on both similarity and time, using the timescale-vector (PostgreSQL) vectorstore.<br>
+</li>
+<li><a href="https://www.timescale.com/blog/timescale-vector-x-llamaindex-making-postgresql-a-better-vector-database-for-ai-applications/">Learn more about Timescale Vector and LlamaIndex</a></li>
+</ul>
+</section>
+<section id="pgvectorize" class="level1">
+<h1>PgVectorize</h1>
+<p>PgVectorize enables you to create vector embeddings from any data that you already have stored in PostgreSQL. You can get more background information in our <a href="https://www.timescale.com/blog/a-complete-guide-to-creating-and-storing-embeddings-for-postgresql-data/">blog post</a> announcing this feature, as well as a <a href="https://www.timescale.com/blog/how-we-designed-a-resilient-vector-embedding-creation-system-for-postgresql-data/">“how we built in”</a> post going into the details of the design.</p>
+<p>To create vector embeddings, simply attach PgVectorize to any PostgreSQL table, and it will automatically sync that table’s data with a set of embeddings stored in Timescale Vector. For example, let’s say you have a blog table defined in the following way:</p>
+<div id="cell-106" class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> psycopg2</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.docstore.document <span class="im">import</span> Document</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> CharacterTextSplitter</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> timescale_vector <span class="im">import</span> client, pgvectorizer</span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain_openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain_community.vectorstores.timescalevector <span class="im">import</span> TimescaleVector</span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> timedelta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-107" class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> psycopg2.<span class="ex">connect</span>(service_url) <span class="im">as</span> conn:</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> conn.cursor() <span class="im">as</span> cursor:</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>        cursor.execute(<span class="st">'''</span></span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a><span class="st">        CREATE TABLE IF NOT EXISTS blog (</span></span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a><span class="st">            id              SERIAL PRIMARY KEY NOT NULL,</span></span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a><span class="st">            title           TEXT NOT NULL,</span></span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a><span class="st">            author          TEXT NOT NULL,</span></span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a><span class="st">            contents        TEXT NOT NULL,</span></span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a><span class="st">            category        TEXT NOT NULL,</span></span>
+<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a><span class="st">            published_time  TIMESTAMPTZ NULL --NULL if not yet published</span></span>
+<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a><span class="st">        );</span></span>
+<span id="cb74-12"><a href="#cb74-12" aria-hidden="true" tabindex="-1"></a><span class="st">        '''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can insert some data as follows:</p>
+<div id="cell-109" class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> psycopg2.<span class="ex">connect</span>(service_url) <span class="im">as</span> conn:</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> conn.cursor() <span class="im">as</span> cursor:</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>        cursor.execute(<span class="st">'''</span></span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a><span class="st">            INSERT INTO blog (title, author, contents, category, published_time) VALUES ('First Post', 'Matvey Arye', 'some super interesting content about cats.', 'AI', '2021-01-01');</span></span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a><span class="st">        '''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now, say you want to embed these blogs in Timescale Vector. First, you need to define an <code>embed_and_write</code> function that takes a set of blog posts, creates the embeddings, and writes them into TimescaleVector. For example, if using LangChain, it could look something like the following.</p>
+<div id="cell-111" class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_document(blog):</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>    text_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>        chunk_size<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>        chunk_overlap<span class="op">=</span><span class="dv">200</span>,</span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>    docs <span class="op">=</span> []</span>
+<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> chunk <span class="kw">in</span> text_splitter.split_text(blog[<span class="st">'contents'</span>]):</span>
+<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>        content <span class="op">=</span> <span class="ss">f"Author </span><span class="sc">{</span>blog[<span class="st">'author'</span>]<span class="sc">}</span><span class="ss">, title: </span><span class="sc">{</span>blog[<span class="st">'title'</span>]<span class="sc">}</span><span class="ss">, contents:</span><span class="sc">{</span>chunk<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a>        metadata <span class="op">=</span> {</span>
+<span id="cb76-10"><a href="#cb76-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"id"</span>: <span class="bu">str</span>(client.uuid_from_time(blog[<span class="st">'published_time'</span>])),</span>
+<span id="cb76-11"><a href="#cb76-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">"blog_id"</span>: blog[<span class="st">'id'</span>], </span>
+<span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"author"</span>: blog[<span class="st">'author'</span>], </span>
+<span id="cb76-13"><a href="#cb76-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">"category"</span>: blog[<span class="st">'category'</span>],</span>
+<span id="cb76-14"><a href="#cb76-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"published_time"</span>: blog[<span class="st">'published_time'</span>].isoformat(),</span>
+<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb76-16"><a href="#cb76-16" aria-hidden="true" tabindex="-1"></a>        docs.append(Document(page_content<span class="op">=</span>content, metadata<span class="op">=</span>metadata))</span>
+<span id="cb76-17"><a href="#cb76-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> docs</span>
+<span id="cb76-18"><a href="#cb76-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-19"><a href="#cb76-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> embed_and_write(blog_instances, vectorizer):</span>
+<span id="cb76-20"><a href="#cb76-20" aria-hidden="true" tabindex="-1"></a>    embedding <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb76-21"><a href="#cb76-21" aria-hidden="true" tabindex="-1"></a>    vector_store <span class="op">=</span> TimescaleVector(</span>
+<span id="cb76-22"><a href="#cb76-22" aria-hidden="true" tabindex="-1"></a>        collection_name<span class="op">=</span><span class="st">"blog_embedding"</span>,</span>
+<span id="cb76-23"><a href="#cb76-23" aria-hidden="true" tabindex="-1"></a>        service_url<span class="op">=</span>service_url,</span>
+<span id="cb76-24"><a href="#cb76-24" aria-hidden="true" tabindex="-1"></a>        embedding<span class="op">=</span>embedding,</span>
+<span id="cb76-25"><a href="#cb76-25" aria-hidden="true" tabindex="-1"></a>        time_partition_interval<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">30</span>),</span>
+<span id="cb76-26"><a href="#cb76-26" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb76-27"><a href="#cb76-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-28"><a href="#cb76-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># delete old embeddings for all ids in the work queue. locked_id is a special column that is set to the primary key of the table being</span></span>
+<span id="cb76-29"><a href="#cb76-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># embedded. For items that are deleted, it is the only key that is set.</span></span>
+<span id="cb76-30"><a href="#cb76-30" aria-hidden="true" tabindex="-1"></a>    metadata_for_delete <span class="op">=</span> [{<span class="st">"blog_id"</span>: blog[<span class="st">'locked_id'</span>]} <span class="cf">for</span> blog <span class="kw">in</span> blog_instances]</span>
+<span id="cb76-31"><a href="#cb76-31" aria-hidden="true" tabindex="-1"></a>    vector_store.delete_by_metadata(metadata_for_delete)</span>
+<span id="cb76-32"><a href="#cb76-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-33"><a href="#cb76-33" aria-hidden="true" tabindex="-1"></a>    documents <span class="op">=</span> []</span>
+<span id="cb76-34"><a href="#cb76-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> blog <span class="kw">in</span> blog_instances:</span>
+<span id="cb76-35"><a href="#cb76-35" aria-hidden="true" tabindex="-1"></a>        <span class="co"># skip blogs that are not published yet, or are deleted (in which case it will be NULL)</span></span>
+<span id="cb76-36"><a href="#cb76-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> blog[<span class="st">'published_time'</span>] <span class="op">!=</span> <span class="va">None</span>:</span>
+<span id="cb76-37"><a href="#cb76-37" aria-hidden="true" tabindex="-1"></a>            documents.extend(get_document(blog))</span>
+<span id="cb76-38"><a href="#cb76-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-39"><a href="#cb76-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(documents) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb76-40"><a href="#cb76-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb76-41"><a href="#cb76-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb76-42"><a href="#cb76-42" aria-hidden="true" tabindex="-1"></a>    texts <span class="op">=</span> [d.page_content <span class="cf">for</span> d <span class="kw">in</span> documents]</span>
+<span id="cb76-43"><a href="#cb76-43" aria-hidden="true" tabindex="-1"></a>    metadatas <span class="op">=</span> [d.metadata <span class="cf">for</span> d <span class="kw">in</span> documents]</span>
+<span id="cb76-44"><a href="#cb76-44" aria-hidden="true" tabindex="-1"></a>    ids <span class="op">=</span> [d.metadata[<span class="st">"id"</span>] <span class="cf">for</span> d <span class="kw">in</span> documents]</span>
+<span id="cb76-45"><a href="#cb76-45" aria-hidden="true" tabindex="-1"></a>    vector_store.add_texts(texts, metadatas, ids)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, all you have to do is run the following code in a scheduled job (cron job, Lambda job, etc):</p>
+<div id="cell-113" class="cell">
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="co"># this job should be run on a schedule</span></span>
+<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>vectorizer <span class="op">=</span> pgvectorizer.Vectorize(service_url, <span class="st">'blog'</span>)</span>
+<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> vectorizer.process(embed_and_write) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Every time that job runs, it will sync the table with your embeddings. It will sync all inserts, updates, and deletes to an embeddings table called <code>blog_embedding</code>.</p>
+<p>Now, you can simply search the embeddings as follows (again, using LangChain in the example):</p>
+<div id="cell-115" class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>embedding <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>vector_store <span class="op">=</span> TimescaleVector(</span>
+<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>    collection_name<span class="op">=</span><span class="st">"blog_embedding"</span>,</span>
+<span id="cb78-4"><a href="#cb78-4" aria-hidden="true" tabindex="-1"></a>    service_url<span class="op">=</span>service_url,</span>
+<span id="cb78-5"><a href="#cb78-5" aria-hidden="true" tabindex="-1"></a>    embedding<span class="op">=</span>embedding,</span>
+<span id="cb78-6"><a href="#cb78-6" aria-hidden="true" tabindex="-1"></a>    time_partition_interval<span class="op">=</span>timedelta(days<span class="op">=</span><span class="dv">30</span>),</span>
+<span id="cb78-7"><a href="#cb78-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb78-8"><a href="#cb78-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb78-9"><a href="#cb78-9" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> vector_store.similarity_search_with_score(<span class="st">"Blogs about cats"</span>)</span>
+<span id="cb78-10"><a href="#cb78-10" aria-hidden="true" tabindex="-1"></a>res</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[(Document(metadata={'id': '334e4800-4bee-11eb-a52a-57b3c4a96ccb', 'author': 'Matvey Arye', 'blog_id': 1, 'category': 'AI', 'published_time': '2021-01-01T00:00:00-05:00'}, page_content='Author Matvey Arye, title: First Post, contents:some super interesting content about cats.'),
+  0.12680577303752072)]</code></pre>
+</div>
+</div>
+<section id="development" class="level2">
+<h2 class="anchored" data-anchor-id="development">Development</h2>
+<p>This project is developed with <a href="https://nbdev.fast.ai/">nbdev</a>. Please see that website for the development process.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/timescale\.github\.io\/python-vector");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/timescale/python-vector/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

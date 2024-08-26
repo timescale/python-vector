@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.56">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Tutorial: Timescale Vector (PostgreSQL) Python Client Library – timescale-vector</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Tutorial: Timescale Vector (PostgreSQL) Python Client Library – timescale-vector">
+<meta property="og:description" content="Python library for storing vector data in Postgres">
+<meta property="og:site_name" content="timescale-vector">
+<meta name="twitter:title" content="Tutorial: Timescale Vector (PostgreSQL) Python Client Library – timescale-vector">
+<meta name="twitter:description" content="Python library for storing vector data in Postgres">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">timescale-vector</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./tsv_python_getting_started_tutorial.html">Tutorial: Timescale Vector (PostgreSQL) Python Client Library</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timescale Vector</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./vector.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Client</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./pgvectorizer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PgVectorizer</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tsv_python_getting_started_tutorial.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Tutorial: Timescale Vector (PostgreSQL) Python Client Library</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-is-timescale-vector" id="toc-what-is-timescale-vector" class="nav-link active" data-scroll-target="#what-is-timescale-vector">What is Timescale Vector?</a></li>
+  <li><a href="#how-to-access-timescale-vector" id="toc-how-to-access-timescale-vector" class="nav-link" data-scroll-target="#how-to-access-timescale-vector">How to access Timescale Vector</a></li>
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">0. Setup</a></li>
+  <li><a href="#create-a-table-to-store-the-vectors-and-metadata" id="toc-create-a-table-to-store-the-vectors-and-metadata" class="nav-link" data-scroll-target="#create-a-table-to-store-the-vectors-and-metadata">1. Create a table to store the vectors and metadata</a></li>
+  <li><a href="#load-in-dataset-create-vector-embeddings-and-prepare-data-for-ingestion" id="toc-load-in-dataset-create-vector-embeddings-and-prepare-data-for-ingestion" class="nav-link" data-scroll-target="#load-in-dataset-create-vector-embeddings-and-prepare-data-for-ingestion">2. Load in dataset, create vector embeddings, and prepare data for ingestion</a>
+  <ul class="collapse">
+  <li><a href="#load-sample-dataset" id="toc-load-sample-dataset" class="nav-link" data-scroll-target="#load-sample-dataset">Load sample dataset</a></li>
+  <li><a href="#create-vector-embeddings" id="toc-create-vector-embeddings" class="nav-link" data-scroll-target="#create-vector-embeddings">Create vector embeddings</a></li>
+  <li><a href="#prepare-data-for-ingestion" id="toc-prepare-data-for-ingestion" class="nav-link" data-scroll-target="#prepare-data-for-ingestion">Prepare data for ingestion</a></li>
+  </ul></li>
+  <li><a href="#add-data-to-timescale-vector" id="toc-add-data-to-timescale-vector" class="nav-link" data-scroll-target="#add-data-to-timescale-vector">3. Add data to Timescale Vector</a></li>
+  <li><a href="#similarity-search-with-timescale-vector" id="toc-similarity-search-with-timescale-vector" class="nav-link" data-scroll-target="#similarity-search-with-timescale-vector">4. Similarity search with Timescale Vector</a>
+  <ul class="collapse">
+  <li><a href="#simple-similarity-search" id="toc-simple-similarity-search" class="nav-link" data-scroll-target="#simple-similarity-search">Simple similarity search</a></li>
+  <li><a href="#similarity-search-with-metadata-filtering" id="toc-similarity-search-with-metadata-filtering" class="nav-link" data-scroll-target="#similarity-search-with-metadata-filtering">Similarity search with metadata filtering</a></li>
+  </ul></li>
+  <li><a href="#using-ann-search-indexes-to-speed-up-queries" id="toc-using-ann-search-indexes-to-speed-up-queries" class="nav-link" data-scroll-target="#using-ann-search-indexes-to-speed-up-queries">5. Using ANN search indexes to speed up queries</a></li>
+  <li><a href="#similarity-search-with-time-filtering" id="toc-similarity-search-with-time-filtering" class="nav-link" data-scroll-target="#similarity-search-with-time-filtering">6. Similarity search with time filtering</a></li>
+  <li><a href="#resources-and-next-steps" id="toc-resources-and-next-steps" class="nav-link" data-scroll-target="#resources-and-next-steps">Resources and next steps</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/timescale/python-vector/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Tutorial: Timescale Vector (PostgreSQL) Python Client Library</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>This notebook shows how to use the PostgreSQL as vector database via the <a href="https://github.com/timescale/python-vector">Python Vector python client library</a>. You’ll learn how to use the client for (1) semantic search, (2) time-based vector search, (3) and how to create indexes to speed up queries.</p>
+<p>Follow along by downloading the <a href="https://github.com/timescale/python-vector/blob/main/nbs/tsv_python_getting_started_tutorial.ipynb">Jupyter notebook version of this tutorial here</a>.</p>
+<p>Sample dataset: We’ll analyze a gitlog dataset (git commit messages) and use the vector embeddings of the commit messages to find relevant commit messages to a given query question. Each git commit entry has a timestamp associated with it, as well as natural language message and other metadata (e.g author, commit hash etc).</p>
+<section id="what-is-timescale-vector" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-timescale-vector">What is Timescale Vector?</h2>
+<p><strong><a href="https://www.timescale.com/ai">Timescale Vector</a> is PostgreSQL++ for AI applications.</strong></p>
+<p>Timescale Vector enables you to efficiently store and query millions of vector embeddings in <code>PostgreSQL</code>.</p>
+<ul>
+<li>Enhances <code>pgvector</code> with faster and more accurate similarity search on 100M+ vectors via <code>DiskANN</code> inspired indexing algorithm.</li>
+<li>Enables fast time-based vector search via automatic time-based partitioning and indexing.</li>
+<li>Provides a familiar SQL interface for querying vector embeddings and relational data.</li>
+</ul>
+<p>Timescale Vector is cloud PostgreSQL for AI that scales with you from POC to production:</p>
+<ul>
+<li>Simplifies operations by enabling you to store relational metadata, vector embeddings, and time-series data in a single database.</li>
+<li>Benefits from rock-solid PostgreSQL foundation with enterprise-grade feature liked streaming backups and replication, high-availability and row-level security.</li>
+<li>Enables a worry-free experience with enterprise-grade security and compliance.</li>
+</ul>
+</section>
+<section id="how-to-access-timescale-vector" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-access-timescale-vector">How to access Timescale Vector</h2>
+<p>Timescale Vector is available on <a href="https://www.timescale.com/ai">Timescale</a>, the cloud PostgreSQL platform. (There is no self-hosted version at this time.)</p>
+<p>Good news! You get a 90-day free trial for Timescale Vector:</p>
+<ul>
+<li>To get started, <a href="https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">signup</a> to Timescale, create a new database and follow this notebook!</li>
+<li>See the <a href="https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">Timescale Vector explainer blog</a> for more details and performance benchmarks.</li>
+</ul>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">0. Setup</h2>
+<p>Download the <a href="https://github.com/timescale/python-vector/blob/main/nbs/tsv_python_getting_started_tutorial.ipynb">Jupyter notebook version of this tutorial</a>.</p>
+<div id="cell-5" class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install needed packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install timescale<span class="op">-</span>vector</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install openai</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install tiktoken</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install python<span class="op">-</span>dotenv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-6" class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import needed packages</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv, find_dotenv</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> timescale_vector</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> timescale_vector <span class="im">import</span> client</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> openai</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tiktoken</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ast</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> uuid</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> timedelta</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Tuple</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We’ll use OpenAI’s embedding models so let’s load our OpenAI API keys from a <code>.env</code> file.</p>
+<p>If you do not have an OpenAI API Key, signup for an OpenAI Developer Account and create an API Key. See <a href="https://platform.openai.com/overview">OpenAI’s developer platform</a> for more information.</p>
+<div id="cell-8" class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run export OPENAI_API_KEY=sk-YOUR_OPENAI_API_KEY...</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Get openAI api key by reading local .env file</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>_ <span class="op">=</span> load_dotenv(find_dotenv())</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>openai.api_key  <span class="op">=</span> os.environ[<span class="st">'OPENAI_API_KEY'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next let’s load our Timescale service URL which we’ll use to connect to our cloud PostgreSQL database hosted on Timescale.</p>
+<p>Launch a PostgreSQL database on <a href="https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">Timescale</a> and download the <code>.env</code> file after your service is created.</p>
+<div id="cell-10" class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the service url by reading local .env file</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The .env file should contain a line starting with `TIMESCALE_SERVICE_URL=postgresql://`</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>_ <span class="op">=</span> load_dotenv(find_dotenv())</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>TIMESCALE_SERVICE_URL <span class="op">=</span> os.environ[<span class="st">"TIMESCALE_SERVICE_URL"</span>]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># OR set it explicitly</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># TIMESCALE_SERVICE_URL = "postgres://tsdbadmin:&lt;password&gt;@&lt;id&gt;.tsdb.cloud.timescale.com:&lt;port&gt;/tsdb?sslmode=require"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="create-a-table-to-store-the-vectors-and-metadata" class="level2">
+<h2 class="anchored" data-anchor-id="create-a-table-to-store-the-vectors-and-metadata">1. Create a table to store the vectors and metadata</h2>
+<p>First, we’ll define a table name, which will be the name of our table in the PostgreSQL database.</p>
+<p>We set the <code>time_partition_interval</code> argument in the client creation function to enable automatic time-based partitioning of the table. This will partition the table into time-based chunks (in this case each containing data for 7 days) and create indexes on the time-based chunks to speed up time-based queries.</p>
+<p>Each partition will consist of data for the specified length of time. We’ll use 7 days for simplicity, but you can pick whatever value make sense for your use case – for example if you query recent vectors frequently you might want to use a smaller time delta like 1 day, or if you query vectors over a decade long time period then you might want to use a larger time delta like 6 months or 1 year.</p>
+<div id="cell-12" class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Table information</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>TABLE_NAME <span class="op">=</span> <span class="st">"commit_history"</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>EMBEDDING_DIMENSIONS <span class="op">=</span> <span class="dv">1536</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>TIME_PARTITION_INTERVAL <span class="op">=</span> timedelta(days<span class="op">=</span><span class="dv">7</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Create client object</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>vec <span class="op">=</span> client.Async(TIMESCALE_SERVICE_URL, </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                   TABLE_NAME,  </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                   EMBEDDING_DIMENSIONS, </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                   time_partition_interval<span class="op">=</span>TIME_PARTITION_INTERVAL)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># create table</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_tables()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <code>create_tables()</code> function will create a table with the following schema:</p>
+<p>id | metadata | contents | embedding</p>
+<ul>
+<li><code>id</code> is the UUID which uniquely identifies each vector.</li>
+<li><code>metadata</code> is a JSONB column which stores the metadata associated with each vector.</li>
+<li><code>contents</code> is the text column which stores the content we want vectorized (in this case the commit message).</li>
+<li><code>embedding</code> is the vector column which stores the vector embedding representation of the content.</li>
+</ul>
+</section>
+<section id="load-in-dataset-create-vector-embeddings-and-prepare-data-for-ingestion" class="level2">
+<h2 class="anchored" data-anchor-id="load-in-dataset-create-vector-embeddings-and-prepare-data-for-ingestion">2. Load in dataset, create vector embeddings, and prepare data for ingestion</h2>
+<section id="load-sample-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="load-sample-dataset">Load sample dataset</h3>
+<p>First, you’ll need to <a href="https://s3.amazonaws.com/assets.timescale.com/ai/commit_history.csv">download the sample dataset</a> and place it in the same directory as this notebook.</p>
+<p>You can use following command:</p>
+<div id="cell-15" class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Download the file using curl and save it as commit_history.csv</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: Execute this command in your terminal, in the same directory as the notebook</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># curl -O https://s3.amazonaws.com/assets.timescale.com/ai/commit_history.csv</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, we’ll load in the gitlog dataset CSV file into a pandas dataframe.</p>
+<p>Note: Since this is a demo, we will only work with the first 1000 records. In practice, you can load as many records as you want.</p>
+<div id="cell-17" class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the path to the dataset file relative to this notebook</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>file_path <span class="op">=</span> Path(<span class="st">"commit_history.csv"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the CSV file into a DataFrame</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(file_path)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Light data cleaning on CSV</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>df.dropna(inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.astype(<span class="bu">str</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df[:<span class="dv">1000</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-18" class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Take a look at the data in the csv (optional)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">commit</th>
+<th data-quarto-table-cell-role="th">author</th>
+<th data-quarto-table-cell-role="th">date</th>
+<th data-quarto-table-cell-role="th">change summary</th>
+<th data-quarto-table-cell-role="th">change details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>44e41c12ab25e36c202f58e068ced262eadc8d16</td>
+<td>Lakshmi Narayanan Sreethar&lt;lakshmi@timescale.com&gt;</td>
+<td>Tue Sep 5 21:03:21 2023 +0530</td>
+<td>Fix segfault in set_integer_now_func</td>
+<td>When an invalid function oid is passed to set_...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>e66a40038e3c84fb1a68da67ad71caf75c64a027</td>
+<td>Bharathy&lt;satish.8483@gmail.com&gt;</td>
+<td>Sat Sep 2 09:24:31 2023 +0530</td>
+<td>Fix server crash on UPDATE of compressed chunk</td>
+<td>UPDATE query with system attributes in WHERE c...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>c6a930897e9f9e9878db031cc7fb6ea79d721a74</td>
+<td>Jan Nidzwetzki&lt;jan@timescale.com&gt;</td>
+<td>Tue Aug 29 21:13:51 2023 +0200</td>
+<td>Use Debian Bookworm for 32-bit tests</td>
+<td>So far, we have used Debian Buster (10) for ou...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>8e941b80ae1b0e0b6affe5431454cdc637628d99</td>
+<td>Lakshmi Narayanan Sreethar&lt;lakshmi@timescale.com&gt;</td>
+<td>Mon Aug 28 23:19:22 2023 +0530</td>
+<td>Fix incorrect row count in EXPLAIN ANALYZE INS...</td>
+<td>INSERT ... ON CONFLICT statements record few m...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>caada43454e25d3098744fa6b675ac7d07390550</td>
+<td>Lakshmi Narayanan Sreethar&lt;lakshmi@timescale.com&gt;</td>
+<td>Tue May 30 20:32:29 2023 +0530</td>
+<td>PG16: Fix concurrent update issues with MERGE.</td>
+<td>PG16 commit postgres/postgres@9321c79c fixes a...</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="create-vector-embeddings" class="level3">
+<h3 class="anchored" data-anchor-id="create-vector-embeddings">Create vector embeddings</h3>
+<p>Next we’ll create vector embeddings of the commit messages using the OpenAI API. We’ll use the <code>text-embedding-ada-002</code> model to create the embeddings <a href="https://platform.openai.com/docs/guides/embeddings/what-are-embeddings">(Learn more here).</a></p>
+<div id="cell-20" class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create embeddings for each commit message</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>embedding_list <span class="op">=</span> []</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>content_list <span class="op">=</span> []</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>openai_client <span class="op">=</span> openai.Client()</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper function: get embeddings for a text</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_embeddings(text):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai_client.embeddings.create(</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span><span class="st">"text-embedding-ada-002"</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">input</span> <span class="op">=</span> text.replace(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span>,<span class="st">" "</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    embedding <span class="op">=</span> response.data[<span class="dv">0</span>].embedding</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> embedding</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> index, row <span class="kw">in</span> df.iterrows():</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">#construct text we want to embed</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> row[<span class="st">'author'</span>] <span class="op">+</span> <span class="st">" "</span><span class="op">+</span> row[<span class="st">'date'</span>] <span class="op">+</span> <span class="st">" "</span> <span class="op">+</span>row[<span class="st">'commit'</span>]<span class="op">+</span> <span class="st">" "</span> <span class="op">+</span> row[<span class="st">'change summary'</span>] <span class="op">+</span> <span class="st">" "</span><span class="op">+</span> row[<span class="st">'change details'</span>]</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    content_list.append(text)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    embedding <span class="op">=</span> get_embeddings(text)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    embedding_list.append(embedding)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-21" class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Append embddings and content to dataframe</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'content'</span>] <span class="op">=</span> content_list</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'embedding'</span>] <span class="op">=</span> embedding_list</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="prepare-data-for-ingestion" class="level3">
+<h3 class="anchored" data-anchor-id="prepare-data-for-ingestion">Prepare data for ingestion</h3>
+<p>Next, we’ll create a uuid for each git log entry.</p>
+<p>We’ll define a helper funciton <code>create_uuid()</code> to create a uuid for commit message and associated vector embedding based on its timestamp.</p>
+<p>In the helper function, we’ll use the timescale vector client library’s <code>uuid_from_time()</code> method to take a date and create a uuid with a datetime portion that reflects the date string.</p>
+<div id="cell-23" class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create uuids for each message</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>uuid_list <span class="op">=</span> []</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-24" class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># helper function to take in a date string in the past and return a uuid v1</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_uuid(date_string: <span class="bu">str</span>):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> date_string <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    time_format <span class="op">=</span> <span class="st">'%a %b </span><span class="sc">%d</span><span class="st"> %H:%M:%S %Y %z'</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    datetime_obj <span class="op">=</span> datetime.strptime(date_string, time_format)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    uuid <span class="op">=</span> client.uuid_from_time(datetime_obj)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">str</span>(uuid)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> index, row <span class="kw">in</span> df.iterrows():</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    uuid <span class="op">=</span> create_uuid(row[<span class="st">'date'</span>])</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    uuid_list.append(uuid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-25" class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add uuids to dataframe</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'uuid'</span>] <span class="op">=</span> uuid_list</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Finally, let’s create a json of metadata for each entry in our dataset.</p>
+<p>We’ll again use some helper functions to ensure we have data in the right format for easy filtering.</p>
+<div id="cell-27" class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper functions</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper function to split name and email given an author string consisting of Name Lastname &lt;email&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> split_name(input_string: <span class="bu">str</span>) <span class="op">-&gt;</span> Tuple[<span class="bu">str</span>, <span class="bu">str</span>]:</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> input_string <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, <span class="va">None</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    start <span class="op">=</span> input_string.find(<span class="st">"&lt;"</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    end <span class="op">=</span> input_string.find(<span class="st">"&gt;"</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> input_string[:start].strip()</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> name</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_date(input_string: <span class="bu">str</span>) <span class="op">-&gt;</span> datetime:</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> input_string <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define a dictionary to map month abbreviations to their numerical equivalents</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    month_dict <span class="op">=</span> {</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Jan"</span>: <span class="st">"01"</span>,</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Feb"</span>: <span class="st">"02"</span>,</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Mar"</span>: <span class="st">"03"</span>,</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Apr"</span>: <span class="st">"04"</span>,</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"May"</span>: <span class="st">"05"</span>,</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Jun"</span>: <span class="st">"06"</span>,</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Jul"</span>: <span class="st">"07"</span>,</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Aug"</span>: <span class="st">"08"</span>,</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Sep"</span>: <span class="st">"09"</span>,</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Oct"</span>: <span class="st">"10"</span>,</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Nov"</span>: <span class="st">"11"</span>,</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Dec"</span>: <span class="st">"12"</span>,</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Split the input string into its components</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>    components <span class="op">=</span> input_string.split()</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract relevant information</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>    day <span class="op">=</span> components[<span class="dv">2</span>]</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>    month <span class="op">=</span> month_dict[components[<span class="dv">1</span>]]</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    year <span class="op">=</span> components[<span class="dv">4</span>]</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    time <span class="op">=</span> components[<span class="dv">3</span>]</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>    timezone_offset_minutes <span class="op">=</span> <span class="bu">int</span>(components[<span class="dv">5</span>])  <span class="co"># Convert the offset to minutes</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>    timezone_hours <span class="op">=</span> timezone_offset_minutes <span class="op">//</span> <span class="dv">60</span>  <span class="co"># Calculate the hours</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>    timezone_minutes <span class="op">=</span> timezone_offset_minutes <span class="op">%</span> <span class="dv">60</span>  <span class="co"># Calculate the remaining minutes</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a formatted string for the timestamptz in PostgreSQL format</span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>    timestamp_tz_str <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">-</span><span class="sc">{</span>month<span class="sc">}</span><span class="ss">-</span><span class="sc">{</span>day<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>time<span class="sc">}</span><span class="ss">+</span><span class="sc">{</span>timezone_hours<span class="sc">:02}{</span>timezone_minutes<span class="sc">:02}</span><span class="ss">"</span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> timestamp_tz_str</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-28" class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>metadata_list <span class="op">=</span> []</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> index, row <span class="kw">in</span> df.iterrows():</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    metadata <span class="op">=</span> {</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"author"</span>: split_name(row[<span class="st">'author'</span>]),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"date"</span>: create_date(row[<span class="st">'date'</span>]),</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"commit"</span>: row[<span class="st">'commit'</span>],</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    metadata_list.append(metadata)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Add metadata to dataframe</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'metadata'</span>] <span class="op">=</span> metadata_list</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-29" class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(metadata_list[<span class="dv">0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'author': 'Lakshmi Narayanan Sreethar', 'date': '2023-09-5 21:03:21+0850', 'commit': '44e41c12ab25e36c202f58e068ced262eadc8d16'}</code></pre>
+</div>
+</div>
+<p>We’ve finished loading in our dataset and preparing it for storage in Timescale Vector.</p>
+<p>Note that we’ve explained each step of the data preparation process in detail for the purposes of this tutorial. In practice, you can create embeddings, uuids and metadata in a single step.</p>
+</section>
+</section>
+<section id="add-data-to-timescale-vector" class="level2">
+<h2 class="anchored" data-anchor-id="add-data-to-timescale-vector">3. Add data to Timescale Vector</h2>
+<p>Next, we’ll add our commit history data to the <code>commit_history</code> table in Timescale Vector.</p>
+<p>We’ll prepare a list of tuples to add to the table. Each tuple will contain the following data:</p>
+<p><code>(id, metadata, contents, embedding)</code></p>
+<p>to match the schema of our table.</p>
+<div id="cell-32" class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remind ourselves of the data in the dataframe</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># df.head()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-33" class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># convert dataframe to array of tuples</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>records <span class="op">=</span> []</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> index, row <span class="kw">in</span> df.iterrows():</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    record <span class="op">=</span> (row[<span class="st">'uuid'</span>], row[<span class="st">'metadata'</span>], row[<span class="st">'content'</span>], row[<span class="st">'embedding'</span>])</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    records.append(record)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Lastly, we batch upsert the data into the table using the <code>.upsert()</code> method passing in our list of tuples we prepared above.</p>
+<div id="cell-35" class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># batch upsert vectors into table</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.upsert(records)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="similarity-search-with-timescale-vector" class="level2">
+<h2 class="anchored" data-anchor-id="similarity-search-with-timescale-vector">4. Similarity search with Timescale Vector</h2>
+<section id="simple-similarity-search" class="level3">
+<h3 class="anchored" data-anchor-id="simple-similarity-search">Simple similarity search</h3>
+<p>Let’s see an example of performing a simple similarity search using Timescale Vector, where we’ll find the most similar commit messages to a given query by performing a nearest neighbor search.</p>
+<div id="cell-37" class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define search query and query_embedding</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>query_string <span class="op">=</span> <span class="st">"What's new with continuous aggregates?"</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>query_embedding <span class="op">=</span> get_embeddings(query_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-38" class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># search table for similar vectors to query_embedding</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>records <span class="op">=</span> <span class="cf">await</span> vec.search(query_embedding)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The response from the <code>.search()</code> method returns a list <code>Records</code> objects. Each <code>Record</code> object contains the following attributes: <code>id</code>, <code>metadata</code>, <code>contents</code>, <code>embedding</code>, <code>distance</code>.</p>
+<p>The results are sorted by distance. The first result is the most similar to our query.</p>
+<p>Let’s inspect them below:</p>
+<div id="cell-40" class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>records</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[&lt;Record id=UUID('18331d00-fc57-11ec-a166-06cee12dbc78') metadata={'date': '2022-07-5 13:39:14+0320', 'author': 'Fabrízio de Royes Mello', 'commit': ' e34218ce2963358a500f6bc315aace0fad29c450'} contents="Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Tue Jul 5 13:39:14 2022 +0200  e34218ce2963358a500f6bc315aace0fad29c450 Migrate Continuous Aggregates to the new format Timescale 2.7 released a new version of Continuous Aggregate (#4269) that store the final aggregation state instead of the byte array of the partial aggregate state, offering multiple opportunities of optimizations as well a more compact form.  When upgrading to Timescale 2.7, new created Continuous Aggregates are using the new format, but existing Continuous Aggregates keep using the format they were defined with.  Created a procedure to upgrade existing Continuous Aggregates from the old format to the new format, by calling a simple procedure:  test=# CALL cagg_migrate('conditions_summary_daily');  Closes #4424 " embedding=array([-0.02072006, -0.00232497, -0.00290987, ..., -0.00420762,
+        -0.00879542, -0.02118798], dtype=float32) distance=0.15402132505614874&gt;,
+ &lt;Record id=UUID('18331d00-fc57-11ec-8f40-352ea14812b8') metadata={'date': '2022-07-5 13:39:14+0320', 'author': 'Fabrízio de Royes Mello', 'commit': ' e34218ce2963358a500f6bc315aace0fad29c450'} contents="Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Tue Jul 5 13:39:14 2022 +0200  e34218ce2963358a500f6bc315aace0fad29c450 Migrate Continuous Aggregates to the new format Timescale 2.7 released a new version of Continuous Aggregate (#4269) that store the final aggregation state instead of the byte array of the partial aggregate state, offering multiple opportunities of optimizations as well a more compact form.  When upgrading to Timescale 2.7, new created Continuous Aggregates are using the new format, but existing Continuous Aggregates keep using the format they were defined with.  Created a procedure to upgrade existing Continuous Aggregates from the old format to the new format, by calling a simple procedure:  test=# CALL cagg_migrate('conditions_summary_daily');  Closes #4424 " embedding=array([-0.02072006, -0.00232497, -0.00290987, ..., -0.00420762,
+        -0.00879542, -0.02118798], dtype=float32) distance=0.15402132505614874&gt;,
+ &lt;Record id=UUID('c98d1c00-6c13-11ed-b2e5-ba3746d2d4a5') metadata={'date': '2022-11-24 13:19:36+-500', 'author': 'Fabrízio de Royes Mello', 'commit': ' 35c91204987ccb0161d745af1a39b7eb91bc65a5'} contents='Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Thu Nov 24 13:19:36 2022 -0300  35c91204987ccb0161d745af1a39b7eb91bc65a5 Add Hierarchical Continuous Aggregates validations Commit 3749953e introduce Hierarchical Continuous Aggregates (aka Continuous Aggregate on top of another Continuous Aggregate) but it lacks of some basic validations.  Validations added during the creation of a Hierarchical Continuous Aggregate:  * Forbid create a continuous aggregate with fixed-width bucket on top of   a continuous aggregate with variable-width bucket.  * Forbid incompatible bucket widths:   - should not be equal;   - bucket width of the new continuous aggregate should be greater than     the source continuous aggregate;   - bucket width of the new continuous aggregate should be multiple of     the source continuous aggregate. ' embedding=array([-0.03262706, -0.0018098 , -0.01641467, ...,  0.00157952,
+        -0.01413165, -0.01476743], dtype=float32) distance=0.15454035563716317&gt;,
+ &lt;Record id=UUID('c98d1c00-6c13-11ed-9626-aeca4bbf6c5d') metadata={'date': '2022-11-24 13:19:36+-500', 'author': 'Fabrízio de Royes Mello', 'commit': ' 35c91204987ccb0161d745af1a39b7eb91bc65a5'} contents='Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Thu Nov 24 13:19:36 2022 -0300  35c91204987ccb0161d745af1a39b7eb91bc65a5 Add Hierarchical Continuous Aggregates validations Commit 3749953e introduce Hierarchical Continuous Aggregates (aka Continuous Aggregate on top of another Continuous Aggregate) but it lacks of some basic validations.  Validations added during the creation of a Hierarchical Continuous Aggregate:  * Forbid create a continuous aggregate with fixed-width bucket on top of   a continuous aggregate with variable-width bucket.  * Forbid incompatible bucket widths:   - should not be equal;   - bucket width of the new continuous aggregate should be greater than     the source continuous aggregate;   - bucket width of the new continuous aggregate should be multiple of     the source continuous aggregate. ' embedding=array([-0.03262706, -0.0018098 , -0.01641467, ...,  0.00157952,
+        -0.01413165, -0.01476743], dtype=float32) distance=0.15454035563716317&gt;,
+ &lt;Record id=UUID('2144db80-88bd-11ec-8cea-ce147abb2c4b') metadata={'date': '2022-02-8 09:57:23+0140', 'author': 'Erik Nordström', 'commit': ' 5af9f45488d51027804cac16362811f71a89bb64'} contents='Erik Nordström&lt;erik@timescale.com&gt; Tue Feb 8 09:57:23 2022 +0100  5af9f45488d51027804cac16362811f71a89bb64 Add extra telemetry for continuous aggregates Add the following telemetry fields for continuous aggregates:  * The number of continuous aggregates created on distributed   hypertables * The number of continuous aggregates using real-time aggregation ' embedding=array([-0.02287812, -0.02124397,  0.01628467, ..., -0.01387608,
+        -0.01325794, -0.01354214], dtype=float32) distance=0.15761212923621704&gt;,
+ &lt;Record id=UUID('2144db80-88bd-11ec-a0f8-155e201a9074') metadata={'date': '2022-02-8 09:57:23+0140', 'author': 'Erik Nordström', 'commit': ' 5af9f45488d51027804cac16362811f71a89bb64'} contents='Erik Nordström&lt;erik@timescale.com&gt; Tue Feb 8 09:57:23 2022 +0100  5af9f45488d51027804cac16362811f71a89bb64 Add extra telemetry for continuous aggregates Add the following telemetry fields for continuous aggregates:  * The number of continuous aggregates created on distributed   hypertables * The number of continuous aggregates using real-time aggregation ' embedding=array([-0.02287812, -0.02124397,  0.01628467, ..., -0.01387608,
+        -0.01325794, -0.01354214], dtype=float32) distance=0.15761212923621704&gt;,
+ &lt;Record id=UUID('dddb6100-d17a-11ec-8fe6-3457c1f43f23') metadata={'date': '2022-05-11 19:36:58+-500', 'author': 'Fabrízio de Royes Mello', 'commit': ' f266f5cf564fcc5509b91493a39eb201c6f5914a'} contents="Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed May 11 19:36:58 2022 -0300  f266f5cf564fcc5509b91493a39eb201c6f5914a Continuous Aggregates finals form Following work started by #4294 to improve performance of Continuous Aggregates by removing the re-aggregation in the user view.  This PR get rid of `partialize_agg` and `finalize_agg` aggregate functions and store the finalized aggregated (plain) data in the materialization hypertable.  Because we're not storing partials anymore and removed the re-aggregation, now is be possible to create indexes on aggregated columns in the materialization hypertable in order to improve the performance even more.  Also removed restrictions on types of aggregates users can perform with Continuous Aggregates: * aggregates with DISTINCT * aggregates with FILTER * aggregates with FILTER in HAVING clause * aggregates without combine function * ordered-set aggregates * hypothetical-set aggregates  By default new Continuous Aggregates will be created using this new format, but the previous version (with partials) will be supported.  Users can create the previous style by setting to `false` the storage paramater named `timescaledb.finalized` during the creation of the Continuous Aggregate.  Fixes #4233 " embedding=array([-0.03077092,  0.0143465 , -0.01135488, ..., -0.00501059,
+        -0.01490651, -0.02304872], dtype=float32) distance=0.1637590571138441&gt;,
+ &lt;Record id=UUID('dddb6100-d17a-11ec-825d-6556061133f2') metadata={'date': '2022-05-11 19:36:58+-500', 'author': 'Fabrízio de Royes Mello', 'commit': ' f266f5cf564fcc5509b91493a39eb201c6f5914a'} contents="Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed May 11 19:36:58 2022 -0300  f266f5cf564fcc5509b91493a39eb201c6f5914a Continuous Aggregates finals form Following work started by #4294 to improve performance of Continuous Aggregates by removing the re-aggregation in the user view.  This PR get rid of `partialize_agg` and `finalize_agg` aggregate functions and store the finalized aggregated (plain) data in the materialization hypertable.  Because we're not storing partials anymore and removed the re-aggregation, now is be possible to create indexes on aggregated columns in the materialization hypertable in order to improve the performance even more.  Also removed restrictions on types of aggregates users can perform with Continuous Aggregates: * aggregates with DISTINCT * aggregates with FILTER * aggregates with FILTER in HAVING clause * aggregates without combine function * ordered-set aggregates * hypothetical-set aggregates  By default new Continuous Aggregates will be created using this new format, but the previous version (with partials) will be supported.  Users can create the previous style by setting to `false` the storage paramater named `timescaledb.finalized` during the creation of the Continuous Aggregate.  Fixes #4233 " embedding=array([-0.03077092,  0.0143465 , -0.01135488, ..., -0.00501059,
+        -0.01490651, -0.02304872], dtype=float32) distance=0.1637590571138441&gt;,
+ &lt;Record id=UUID('0df31a00-44f7-11ed-82a8-18143619d1eb') metadata={'date': '2022-10-5 18:45:40+-500', 'author': 'Fabrízio de Royes Mello', 'commit': ' 3749953e9704e45df8f621607989ada0714ce28d'} contents='Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed Oct 5 18:45:40 2022 -0300  3749953e9704e45df8f621607989ada0714ce28d Hierarchical Continuous Aggregates Enable users create Hierarchical Continuous Aggregates (aka Continuous Aggregates on top of another Continuous Aggregates).  With this PR users can create levels of aggregation granularity in Continuous Aggregates making the refresh process even faster.  A problem with this feature can be in upper levels we can end up with the "average of averages". But to get the "real average" we can rely on "stats_aggs" TimescaleDB Toolkit function that calculate and store the partials that can be finalized with other toolkit functions like "average" and "sum".  Closes #1400 ' embedding=array([-0.02771199,  0.01358744,  0.00311197, ..., -0.00547272,
+        -0.01917629, -0.03033948], dtype=float32) distance=0.16440806282766374&gt;,
+ &lt;Record id=UUID('0df31a00-44f7-11ed-99ea-57328005937d') metadata={'date': '2022-10-5 18:45:40+-500', 'author': 'Fabrízio de Royes Mello', 'commit': ' 3749953e9704e45df8f621607989ada0714ce28d'} contents='Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed Oct 5 18:45:40 2022 -0300  3749953e9704e45df8f621607989ada0714ce28d Hierarchical Continuous Aggregates Enable users create Hierarchical Continuous Aggregates (aka Continuous Aggregates on top of another Continuous Aggregates).  With this PR users can create levels of aggregation granularity in Continuous Aggregates making the refresh process even faster.  A problem with this feature can be in upper levels we can end up with the "average of averages". But to get the "real average" we can rely on "stats_aggs" TimescaleDB Toolkit function that calculate and store the partials that can be finalized with other toolkit functions like "average" and "sum".  Closes #1400 ' embedding=array([-0.02771199,  0.01358744,  0.00311197, ..., -0.00547272,
+        -0.01917629, -0.03033948], dtype=float32) distance=0.16440806282766374&gt;]</code></pre>
+</div>
+</div>
+<p>Let’s look at how to access the fields of a record object. The client provides helper methods to easily access the fields of a record object.</p>
+<p>We’ll use them inspect the content of the results to see that they are indeed relevant to the query we searched for.</p>
+<div id="cell-42" class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> result <span class="kw">in</span> records:</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(result[client.SEARCH_RESULT_CONTENTS_IDX])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Tue Jul 5 13:39:14 2022 +0200  e34218ce2963358a500f6bc315aace0fad29c450 Migrate Continuous Aggregates to the new format Timescale 2.7 released a new version of Continuous Aggregate (#4269) that store the final aggregation state instead of the byte array of the partial aggregate state, offering multiple opportunities of optimizations as well a more compact form.  When upgrading to Timescale 2.7, new created Continuous Aggregates are using the new format, but existing Continuous Aggregates keep using the format they were defined with.  Created a procedure to upgrade existing Continuous Aggregates from the old format to the new format, by calling a simple procedure:  test=# CALL cagg_migrate('conditions_summary_daily');  Closes #4424 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Tue Jul 5 13:39:14 2022 +0200  e34218ce2963358a500f6bc315aace0fad29c450 Migrate Continuous Aggregates to the new format Timescale 2.7 released a new version of Continuous Aggregate (#4269) that store the final aggregation state instead of the byte array of the partial aggregate state, offering multiple opportunities of optimizations as well a more compact form.  When upgrading to Timescale 2.7, new created Continuous Aggregates are using the new format, but existing Continuous Aggregates keep using the format they were defined with.  Created a procedure to upgrade existing Continuous Aggregates from the old format to the new format, by calling a simple procedure:  test=# CALL cagg_migrate('conditions_summary_daily');  Closes #4424 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Thu Nov 24 13:19:36 2022 -0300  35c91204987ccb0161d745af1a39b7eb91bc65a5 Add Hierarchical Continuous Aggregates validations Commit 3749953e introduce Hierarchical Continuous Aggregates (aka Continuous Aggregate on top of another Continuous Aggregate) but it lacks of some basic validations.  Validations added during the creation of a Hierarchical Continuous Aggregate:  * Forbid create a continuous aggregate with fixed-width bucket on top of   a continuous aggregate with variable-width bucket.  * Forbid incompatible bucket widths:   - should not be equal;   - bucket width of the new continuous aggregate should be greater than     the source continuous aggregate;   - bucket width of the new continuous aggregate should be multiple of     the source continuous aggregate. 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Thu Nov 24 13:19:36 2022 -0300  35c91204987ccb0161d745af1a39b7eb91bc65a5 Add Hierarchical Continuous Aggregates validations Commit 3749953e introduce Hierarchical Continuous Aggregates (aka Continuous Aggregate on top of another Continuous Aggregate) but it lacks of some basic validations.  Validations added during the creation of a Hierarchical Continuous Aggregate:  * Forbid create a continuous aggregate with fixed-width bucket on top of   a continuous aggregate with variable-width bucket.  * Forbid incompatible bucket widths:   - should not be equal;   - bucket width of the new continuous aggregate should be greater than     the source continuous aggregate;   - bucket width of the new continuous aggregate should be multiple of     the source continuous aggregate. 
+--------------------------------------------------------------------------------
+Erik Nordström&lt;erik@timescale.com&gt; Tue Feb 8 09:57:23 2022 +0100  5af9f45488d51027804cac16362811f71a89bb64 Add extra telemetry for continuous aggregates Add the following telemetry fields for continuous aggregates:  * The number of continuous aggregates created on distributed   hypertables * The number of continuous aggregates using real-time aggregation 
+--------------------------------------------------------------------------------
+Erik Nordström&lt;erik@timescale.com&gt; Tue Feb 8 09:57:23 2022 +0100  5af9f45488d51027804cac16362811f71a89bb64 Add extra telemetry for continuous aggregates Add the following telemetry fields for continuous aggregates:  * The number of continuous aggregates created on distributed   hypertables * The number of continuous aggregates using real-time aggregation 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed May 11 19:36:58 2022 -0300  f266f5cf564fcc5509b91493a39eb201c6f5914a Continuous Aggregates finals form Following work started by #4294 to improve performance of Continuous Aggregates by removing the re-aggregation in the user view.  This PR get rid of `partialize_agg` and `finalize_agg` aggregate functions and store the finalized aggregated (plain) data in the materialization hypertable.  Because we're not storing partials anymore and removed the re-aggregation, now is be possible to create indexes on aggregated columns in the materialization hypertable in order to improve the performance even more.  Also removed restrictions on types of aggregates users can perform with Continuous Aggregates: * aggregates with DISTINCT * aggregates with FILTER * aggregates with FILTER in HAVING clause * aggregates without combine function * ordered-set aggregates * hypothetical-set aggregates  By default new Continuous Aggregates will be created using this new format, but the previous version (with partials) will be supported.  Users can create the previous style by setting to `false` the storage paramater named `timescaledb.finalized` during the creation of the Continuous Aggregate.  Fixes #4233 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed May 11 19:36:58 2022 -0300  f266f5cf564fcc5509b91493a39eb201c6f5914a Continuous Aggregates finals form Following work started by #4294 to improve performance of Continuous Aggregates by removing the re-aggregation in the user view.  This PR get rid of `partialize_agg` and `finalize_agg` aggregate functions and store the finalized aggregated (plain) data in the materialization hypertable.  Because we're not storing partials anymore and removed the re-aggregation, now is be possible to create indexes on aggregated columns in the materialization hypertable in order to improve the performance even more.  Also removed restrictions on types of aggregates users can perform with Continuous Aggregates: * aggregates with DISTINCT * aggregates with FILTER * aggregates with FILTER in HAVING clause * aggregates without combine function * ordered-set aggregates * hypothetical-set aggregates  By default new Continuous Aggregates will be created using this new format, but the previous version (with partials) will be supported.  Users can create the previous style by setting to `false` the storage paramater named `timescaledb.finalized` during the creation of the Continuous Aggregate.  Fixes #4233 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed Oct 5 18:45:40 2022 -0300  3749953e9704e45df8f621607989ada0714ce28d Hierarchical Continuous Aggregates Enable users create Hierarchical Continuous Aggregates (aka Continuous Aggregates on top of another Continuous Aggregates).  With this PR users can create levels of aggregation granularity in Continuous Aggregates making the refresh process even faster.  A problem with this feature can be in upper levels we can end up with the "average of averages". But to get the "real average" we can rely on "stats_aggs" TimescaleDB Toolkit function that calculate and store the partials that can be finalized with other toolkit functions like "average" and "sum".  Closes #1400 
+--------------------------------------------------------------------------------
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Wed Oct 5 18:45:40 2022 -0300  3749953e9704e45df8f621607989ada0714ce28d Hierarchical Continuous Aggregates Enable users create Hierarchical Continuous Aggregates (aka Continuous Aggregates on top of another Continuous Aggregates).  With this PR users can create levels of aggregation granularity in Continuous Aggregates making the refresh process even faster.  A problem with this feature can be in upper levels we can end up with the "average of averages". But to get the "real average" we can rely on "stats_aggs" TimescaleDB Toolkit function that calculate and store the partials that can be finalized with other toolkit functions like "average" and "sum".  Closes #1400 </code></pre>
+</div>
+</div>
+<p>Here’s how to access each field of a record object:</p>
+<div id="cell-44" class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> records[<span class="dv">0</span>]</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>record_id <span class="op">=</span> result[client.SEARCH_RESULT_ID_IDX]</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>record_metadata <span class="op">=</span> result[client.SEARCH_RESULT_METADATA_IDX]</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>record_embedding <span class="op">=</span> result[client.SEARCH_RESULT_EMBEDDING_IDX]</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>record_distance <span class="op">=</span> result[client.SEARCH_RESULT_DISTANCE_IDX]</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>record_contents <span class="op">=</span> result[client.SEARCH_RESULT_CONTENTS_IDX]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-45" class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(record_id)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(record_metadata)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(record_contents)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(record_distance)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--------------------------------------------------------------------------------
+18331d00-fc57-11ec-a166-06cee12dbc78
+{'date': '2022-07-5 13:39:14+0320', 'author': 'Fabrízio de Royes Mello', 'commit': ' e34218ce2963358a500f6bc315aace0fad29c450'}
+Fabrízio de Royes Mello&lt;fabriziomello@gmail.com&gt; Tue Jul 5 13:39:14 2022 +0200  e34218ce2963358a500f6bc315aace0fad29c450 Migrate Continuous Aggregates to the new format Timescale 2.7 released a new version of Continuous Aggregate (#4269) that store the final aggregation state instead of the byte array of the partial aggregate state, offering multiple opportunities of optimizations as well a more compact form.  When upgrading to Timescale 2.7, new created Continuous Aggregates are using the new format, but existing Continuous Aggregates keep using the format they were defined with.  Created a procedure to upgrade existing Continuous Aggregates from the old format to the new format, by calling a simple procedure:  test=# CALL cagg_migrate('conditions_summary_daily');  Closes #4424 
+0.15402132505614874
+--------------------------------------------------------------------------------</code></pre>
+</div>
+</div>
+</section>
+<section id="similarity-search-with-metadata-filtering" class="level3">
+<h3 class="anchored" data-anchor-id="similarity-search-with-metadata-filtering">Similarity search with metadata filtering</h3>
+<p>Timecale Vector also supports filtering results by metadata. Let’s see an example of this, where we’ll specify the number of results to return using the <code>limit</code> argument and filter the results by the <code>author</code> metadata field.</p>
+<div id="cell-47" class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>records_filtered <span class="op">=</span> <span class="cf">await</span> vec.search(query_embedding, limit<span class="op">=</span><span class="dv">3</span>, <span class="bu">filter</span><span class="op">=</span>{<span class="st">"author"</span>: <span class="st">"Rafia Sabih"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-48" class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> result <span class="kw">in</span> records_filtered:</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(result[client.SEARCH_RESULT_CONTENTS_IDX])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--------------------------------------------------------------------------------
+Rafia Sabih&lt;rafia.sabih@gmail.com&gt; Wed Feb 8 11:54:28 2023 +0100  98218c1d079231a9aa469b37ddd0ed39e77c2adb Enable joins for heirarchical continuous aggregates The joins could be between a continuous aggregate and hypertable, continuous aggregate and a regular Postgres table, and continuous aggregate and a regular Postgres view. 
+--------------------------------------------------------------------------------
+Rafia Sabih&lt;rafia.sabih@gmail.com&gt; Wed Feb 8 11:54:28 2023 +0100  98218c1d079231a9aa469b37ddd0ed39e77c2adb Enable joins for heirarchical continuous aggregates The joins could be between a continuous aggregate and hypertable, continuous aggregate and a regular Postgres table, and continuous aggregate and a regular Postgres view. 
+--------------------------------------------------------------------------------
+Rafia Sabih&lt;rafia.sabih@gmail.com&gt; Thu Apr 27 15:01:38 2023 +0200  d9849325d0d0f81a13db1e41aa56f8b567945e72 Improve test suite Add more regression tests for Continuous aggregates with joins. </code></pre>
+</div>
+</div>
+<p>We can from the output above that we only get results back from the author we filtered for!</p>
+</section>
+</section>
+<section id="using-ann-search-indexes-to-speed-up-queries" class="level2">
+<h2 class="anchored" data-anchor-id="using-ann-search-indexes-to-speed-up-queries">5. Using ANN search indexes to speed up queries</h2>
+<p>You can speed up similarity queries by creating an index on the embedding column. We recommend doing this if you have large number (10k+) vectors in your table.</p>
+<p>Timescale Vector supports the following indexes: - timescale_vector_index: a disk-ann inspired graph index for fast similarity search (default). - pgvector’s HNSW index: a hierarchical navigable small world graph index for fast similarity search. - pgvector’s IVFFLAT index: an inverted file index for fast similarity search.</p>
+<p>To learn more about Timescale Vector’s new DiskANN inspired index, see the <a href="https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">Timescale Vector explainer blog</a> for more details and performance benchmarks.</p>
+<p>Important note: In PostgreSQL, each table can only have one index on a particular column. So if you’d like to test the performance of different index types, you can do so either by (1) creating multiple tables with different indexes, (2) creating multiple vector columns in the same table and creating different indexes on each column, or (3) by dropping and recreating the index on the same column and comparing results.</p>
+<p>Let’s look at how to create each type of index, starting with the StreamingDiskANN index.</p>
+<div id="cell-51" class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a timescale vector (DiskANN) search index on the embedding column</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(client.DiskAnnIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Timescale Vector also supports HNSW and ivfflat indexes:</p>
+<div id="cell-53" class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create HNSW search index on the embedding column</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(client.HNSWIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-54" class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create IVFFLAT search index on the embedding column</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(client.IvfflatIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In general we recommend using the timescale vector or HNSW index for most use cases, as they are most useful for high dimension and large datasets.</p>
+<div id="cell-56" class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.drop_embedding_index()</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> vec.create_embedding_index(client.DiskAnnIndex())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="similarity-search-with-time-filtering" class="level2">
+<h2 class="anchored" data-anchor-id="similarity-search-with-time-filtering">6. Similarity search with time filtering</h2>
+<p>We’ll use Timescale Vector to find similar commits to a given query within a time range.</p>
+<p>A key use case for Timescale Vector is efficient time-based vector search. Timescale Vector enables this by automatically partitioning vectors (and associated metadata) by time. This allows you to efficiently query vectors by both similarity to a query vector and time.</p>
+<p>Time-based vector search functionality is helpful for applications like: - Storing and retrieving LLM response history (e.g.&nbsp;chatbots) - Finding the most recent embeddings that are similar to a query vector (e.g recent news). - Constraining similarity search to a relevant time range (e.g asking time-based questions about a knowledge base)</p>
+<p>Let’s look at how to run similarity searches with time range filters using the client.</p>
+<ul>
+<li><p>The first step to using time filtering with Timescale Vector is to create a table with the <code>time_partition_interval</code> argument set to the desired time interval. This will automatically partition the table into time-based chunks to speed up queries. We completed this step in Part 1 above.</p></li>
+<li><p>Next, we ensure the <code>id</code> of our row is a <code>uuid</code> with a datetime portion that reflects the date and time we want to associated with the embedding. We completed this step in Part 2 above, where we used the <code>uuid_from_time()</code> method provided by the Timescale Vector library.</p></li>
+<li><p>Finally, we can run similarity searches with time range filters using the client. We’ll illustrate this below.</p></li>
+</ul>
+<div id="cell-58" class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define search query</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>query_string <span class="op">=</span> <span class="st">"What's new with TimescaleDB functions?"</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>query_embedding <span class="op">=</span> get_embeddings(query_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-59" class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time filter variables for query</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>start_date <span class="op">=</span> datetime(<span class="dv">2023</span>, <span class="dv">8</span>, <span class="dv">1</span>, <span class="dv">22</span>, <span class="dv">10</span>, <span class="dv">35</span>) <span class="co"># Start date = 1 August 2023, 22:10:35</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>end_date <span class="op">=</span> datetime(<span class="dv">2023</span>, <span class="dv">8</span>, <span class="dv">30</span>, <span class="dv">22</span>, <span class="dv">10</span>, <span class="dv">35</span>) <span class="co"># End date = 30 August 2023, 22:10:35</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>td <span class="op">=</span> timedelta(days<span class="op">=</span><span class="dv">7</span>) <span class="co"># Time delta = 7 days</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-60" class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Method 1: Filter within a provided start date and end date.</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>records_time_filtered <span class="op">=</span> <span class="cf">await</span> vec.search(query_embedding,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>                        limit<span class="op">=</span><span class="dv">3</span>, </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>                        uuid_time_filter<span class="op">=</span>client.UUIDTimeRange(start_date, end_date))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-61" class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> result <span class="kw">in</span> records_time_filtered:</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(result[client.SEARCH_RESULT_CONTENTS_IDX])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--------------------------------------------------------------------------------
+Sven Klemm&lt;sven@timescale.com&gt; Tue Aug 29 18:13:24 2023 +0200  e4facda540286b0affba47ccc63959fefe2a7b26 Add compatibility layer for _timescaledb_internal functions With timescaledb 2.12 all the functions present in _timescaledb_internal were moved into the _timescaledb_functions schema to improve schema security. This patch adds a compatibility layer so external callers of these internal functions will not break and allow for more flexibility when migrating. 
+--------------------------------------------------------------------------------
+Sven Klemm&lt;sven@timescale.com&gt; Tue Aug 29 18:13:24 2023 +0200  e4facda540286b0affba47ccc63959fefe2a7b26 Add compatibility layer for _timescaledb_internal functions With timescaledb 2.12 all the functions present in _timescaledb_internal were moved into the _timescaledb_functions schema to improve schema security. This patch adds a compatibility layer so external callers of these internal functions will not break and allow for more flexibility when migrating. 
+--------------------------------------------------------------------------------
+Dmitry Simonenko&lt;dmitry@timescale.com&gt; Thu Aug 3 14:30:23 2023 +0300  7aeed663b9c0f337b530fd6cad47704a51a9b2ec Feature flags for TimescaleDB features This PR adds several GUCs which allow to enable/disable major timescaledb features:  - enable_hypertable_create - enable_hypertable_compression - enable_cagg_create - enable_policy_create </code></pre>
+</div>
+</div>
+<p>Only vectors within the specified time range are returned. These queries are very efficient as they only need to search the relevant partitions.</p>
+</section>
+<section id="resources-and-next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="resources-and-next-steps">Resources and next steps</h2>
+<p>To continue your learning journey check out the following resources:</p>
+<ul>
+<li><a href="https://www.timescale.com/ai">Timescale Vector AI tutorials and guides</a></li>
+<li><a href="https://www.timescale.com/blog/how-we-made-postgresql-the-best-vector-database/?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">Timescale Vector explainer blog and performance benchmarks</a> for more details and performance benchmarks.</li>
+<li><a href="https://python.langchain.com/docs/integrations/vectorstores/timescalevector">Using Timescale Vector with LangChain</a></li>
+<li><a href="https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/Timescalevector.html">Using Timescale Vector with LlamaIndex</a></li>
+</ul>
+<p>And finally, if you haven’t already, remember to claim your 90 days free of Timescale Vector by <a href="https://console.cloud.timescale.com/signup?utm_campaign=vectorlaunch&amp;utm_source=github&amp;utm_medium=direct">signing up here</a>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/timescale\.github\.io\/python-vector");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/timescale/python-vector/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
