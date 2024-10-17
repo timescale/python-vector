@@ -1,51 +1,50 @@
 [project]
 name = "timescale-vector"
-requires-python = ">=3.10"
-
-[build-system]
-requires = ["poetry-core>=1.8.4"]
-build-backend = "poetry.core.masonry.api"
-
-
-[tool.poetry]
-name = "timescale-vector"
 version = "0.0.9"
 description = "Python library for storing vector data in Postgres"
-authors = ["Matvey Arye <mat@timescale.com>"]
-license = "Apache-2.0"
+authors = [
+    {name = "Matvey Arye", email = "mat@timescale.com"},
+]
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
 readme = "README.md"
-repository = "https://github.com/timescale/python-vector"
-documentation = "https://timescale.github.io/python-vector"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.10",
 ]
-packages = [
-    { include = "timescale_vector" },
+
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "asyncpg>=0.29.0",
+    "psycopg2>=2.9.9",
+    "pgvector>=0.3.5",
+    "numpy>=1,<2",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.9",
+    "pyright>=1.1.384",
+    "pytest>=8.3.3",
+    "langchain>=0.3.3",
+    "langchain-openai>=0.2.2",
+    "langchain-community>=0.3.2",
+    "pandas>=2.2.3",
+    "pytest-asyncio>=0.24.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-python-dotenv = "^1.0.1"
-asyncpg = "^0.29.0"
-psycopg2 = "^2.9.9"
-pgvector = "^0.3.5"
-numpy = ">=1,<2"
+[project.urls]
+repository = "https://github.com/timescale/python-vector"
+documentation = "https://timescale.github.io/python-vector"
 
-[tool.poetry.dev-dependencies]
-ruff = "^0.6.9"
-pyright = "^1.1.384"
-pytest = "^8.3.3"
-langchain = "^0.3.3"
-langchain-openai = "^0.2.2"
-langchain-community = "^0.3.2"
-pandas = "^2.2.3"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.24.0"
+[tool.hatch.build.targets.wheel]
+packages = ["timescale_vector"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -53,11 +52,7 @@ addopts = [
 ]
 
 [tool.pyright]
-# this enables practically every flag given by pyright.
-# there are a couple of flags that are still disabled by
-# default in strict mode as they are experimental and niche.
 typeCheckingMode = "strict"
-
 reportImplicitOverride = true
 exclude = [
     "**/.bzr",
@@ -86,7 +81,6 @@ exclude = [
     "**/site-packages",
     "**/venv",
 ]
-
 
 [tool.ruff]
 line-length = 120
@@ -126,40 +120,21 @@ exclude = [
 
 [tool.ruff.format]
 docstring-code-format = true
-
-# Like Black, use double quotes for strings.
 quote-style = "double"
-
-# Like Black, indent with spaces, rather than tabs.
 indent-style = "space"
-
-# Like Black, respect magic trailing commas.
 skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
 [tool.ruff.lint]
-
 select = [
-    # pycodestyle
     "E",
-    # Pyflakes
     "F",
-    # pyupgrade
     "UP",
-    # flake8-bugbear
     "B",
-    # flake8-simplify
     "SIM",
-    # isort
     "I",
-    # unused arguments
     "ARG",
-    # trailing whitespace
     "W291",
-    # print statements
     "PIE",
-    # flakes8-quote
     "Q"
 ]
