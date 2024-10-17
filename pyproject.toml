@@ -23,18 +23,6 @@ dependencies = [
     "numpy>=1,<2",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "ruff>=0.6.9",
-    "pyright>=1.1.384",
-    "pytest>=8.3.3",
-    "langchain>=0.3.3",
-    "langchain-openai>=0.2.2",
-    "langchain-community>=0.3.2",
-    "pandas>=2.2.3",
-    "pytest-asyncio>=0.24.0",
-]
-
 [project.urls]
 repository = "https://github.com/timescale/python-vector"
 documentation = "https://timescale.github.io/python-vector"
@@ -51,36 +39,11 @@ addopts = [
     "--import-mode=importlib",
 ]
 
-[tool.pyright]
-typeCheckingMode = "strict"
-reportImplicitOverride = true
-exclude = [
-    "**/.bzr",
-    "**/.direnv",
-    "**/.eggs",
-    "**/.git",
-    "**/.git-rewrite",
-    "**/.hg",
-    "**/.ipynb_checkpoints",
-    "**/.mypy_cache",
-    "**/.nox",
-    "**/.pants.d",
-    "**/.pyenv",
-    "**/.pytest_cache",
-    "**/.pytype",
-    "**/.ruff_cache",
-    "**/.svn",
-    "**/.tox",
-    "**/.venv",
-    "**/.vscode",
-    "**/__pypackages__",
-    "**/_build",
-    "**/buck-out",
-    "**/dist",
-    "**/node_modules",
-    "**/site-packages",
-    "**/venv",
-]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+namespace_packages = true
 
 [tool.ruff]
 line-length = 120
@@ -137,4 +100,17 @@ select = [
     "W291",
     "PIE",
     "Q"
+]
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.12.0",
+    "types-psycopg2>=2.9.21.20240819",
+    "ruff>=0.6.9",
+    "pytest>=8.3.3",
+    "langchain>=0.3.3",
+    "langchain-openai>=0.2.2",
+    "langchain-community>=0.3.2",
+    "pandas>=2.2.3",
+    "pytest-asyncio>=0.24.0",
 ]
