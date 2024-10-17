@@ -1,6 +1,8 @@
 __all__ = ["Vectorize"]
 
 import re
+from collections.abc import Callable
+from typing import Any
 
 import psycopg2.extras
 import psycopg2.pool
@@ -8,7 +10,7 @@ import psycopg2.pool
 from . import client
 
 
-def _create_ident(base: str, suffix: str):
+def _create_ident(base: str, suffix: str) -> str:
     if len(base) + len(suffix) > 62:
         base = base[: 62 - len(suffix)]
     return re.sub(r"[^a-zA-Z0-9_]", "_", f"{base}_{suffix}")
@@ -21,9 +23,9 @@ class Vectorize:
         table_name: str,
         schema_name: str = "public",
         id_column_name: str = "id",
-        work_queue_table_name: str = None,
+        work_queue_table_name: str | None = None,
         trigger_name: str = "track_changes_for_embedding",
-        trigger_name_fn: str = None,
+        trigger_name_fn: str | None = None,
     ) -> None:
         self.service_url = service_url
         self.table_name_unquoted = table_name
@@ -41,13 +43,13 @@ class Vectorize:
             trigger_name_fn = _create_ident(table_name, "wq_for_embedding")
         self.trigger_name_fn = client.QueryBuilder._quote_ident(trigger_name_fn)
 
-    def register(self):
+    def register(self) -> None:
         with psycopg2.connect(self.service_url) as conn, conn.cursor() as cursor:
             cursor.execute(f"""
                 SELECT to_regclass('{self.schema_name}.{self.work_queue_table_name}') is not null;
             """)
-            table_exists = cursor.fetchone()[0]
-            if table_exists:
+            table_exists = cursor.fetchone()
+            if table_exists and table_exists[0]:
                 return
 
             cursor.execute(f"""
@@ -80,7 +82,12 @@ class Vectorize:
                 FROM {self.schema_name}.{self.table_name};
             """)
 
-    def process(self, embed_and_write_cb, batch_size: int = 10, autoregister=True):
+    def process(
+        self,
+        embed_and_write_cb: Callable[[list[Any], "Vectorize"], None],
+        batch_size: int = 10,
+        autoregister: bool = True,
+    ) -> int:
         if autoregister:
             self.register()
 
@@ -91,7 +98,9 @@ class Vectorize:
             cursor.execute(f"""
                 SELECT to_regclass('{self.schema_name}.{self.work_queue_table_name}')::oid;
             """)
-            table_oid = cursor.fetchone()[0]
+            table_oid = cursor.fetchone()
+            if table_oid is None:
+                return 0
 
             cursor.execute(f"""
                 WITH selected_rows AS (
@@ -101,7 +110,7 @@ class Vectorize:
                     FOR UPDATE SKIP LOCKED
                 ),
                 locked_items AS (
-                    SELECT id, pg_try_advisory_xact_lock({int(table_oid)}, id) AS locked
+                    SELECT id, pg_try_advisory_xact_lock({int(table_oid[0])}, id) AS locked
                     FROM (SELECT DISTINCT id FROM selected_rows ORDER BY id) as ids
                 ),
                 deleted_rows AS (

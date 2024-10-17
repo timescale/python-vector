@@ -29,7 +29,7 @@ import uuid
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 import asyncpg
 import numpy as np
@@ -40,7 +40,9 @@ from pgvector.asyncpg import register_vector
 
 
 # copied from Cassandra: https://docs.datastax.com/en/drivers/python/3.2/_modules/cassandra/util.html#uuid_from_time
-def uuid_from_time(time_arg=None, node=None, clock_seq=None):
+def uuid_from_time(
+    time_arg: float | datetime | None = None, node: Any = None, clock_seq: int | None = None
+) -> uuid.UUID:
     """
     Converts a datetime or timestamp to a type 1 `uuid.UUID`.
 
@@ -67,12 +69,13 @@ def uuid_from_time(time_arg=None, node=None, clock_seq=None):
         # this is different from the Cassandra version,
         # we assume that a naive datetime is in system time and convert it to UTC
         # we do this because naive datetimes are interpreted as timestamps (without timezone) in postgres
-        if time_arg.tzinfo is None:
-            time_arg = time_arg.astimezone(timezone.utc)
-        seconds = int(calendar.timegm(time_arg.utctimetuple()))
-        microseconds = (seconds * 1e6) + time_arg.time().microsecond
+        time_arg_dt: datetime = time_arg
+        if time_arg_dt.tzinfo is None:
+            time_arg_dt = time_arg_dt.astimezone(timezone.utc)
+        seconds = int(calendar.timegm(time_arg_dt.utctimetuple()))
+        microseconds = (seconds * 1e6) + time_arg_dt.time().microsecond
     else:
-        microseconds = int(time_arg * 1e6)
+        microseconds = int(float(time_arg) * 1e6)
 
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
@@ -136,8 +139,8 @@ class IvfflatIndex(BaseIndex):
         """
         Pgvector's ivfflat index.
         """
-        self.num_records = num_records
-        self.num_lists = num_lists
+        self.num_records: int | None = num_records
+        self.num_lists: int | None = num_lists
 
     def get_num_records(self, num_record_callback: Callable[[], int]) -> int:
         if self.num_records is not None:
@@ -154,7 +157,7 @@ class IvfflatIndex(BaseIndex):
             num_lists = 10
         if num_records > 1000000:
             num_lists = math.sqrt(num_records)
-        return num_lists
+        return int(num_lists)
 
     def create_index_query(
         self,
@@ -178,8 +181,8 @@ class HNSWIndex(BaseIndex):
         """
         Pgvector's hnsw index.
         """
-        self.m = m
-        self.ef_construction = ef_construction
+        self.m: int | None = m
+        self.ef_construction: int | None = ef_construction
 
     def create_index_query(
         self,
@@ -191,7 +194,7 @@ class HNSWIndex(BaseIndex):
     ) -> str:
         index_method = self.get_index_method(distance_type)
 
-        with_clauses = []
+        with_clauses: list[str] = []
         if self.m is not None:
             with_clauses.append(f"m = {self.m}")
         if self.ef_construction is not None:
@@ -220,12 +223,12 @@ class DiskAnnIndex(BaseIndex):
         """
         Timescale's vector index.
         """
-        self.search_list_size = search_list_size
-        self.num_neighbors = num_neighbors
-        self.max_alpha = max_alpha
-        self.storage_layout = storage_layout
-        self.num_dimensions = num_dimensions
-        self.num_bits_per_dimension = num_bits_per_dimension
+        self.search_list_size: int | None = search_list_size
+        self.num_neighbors: int | None = num_neighbors
+        self.max_alpha: float | None = max_alpha
+        self.storage_layout: str | None = storage_layout
+        self.num_dimensions: int | None = num_dimensions
+        self.num_bits_per_dimension: int | None = num_bits_per_dimension
 
     def create_index_query(
         self,
@@ -240,7 +243,7 @@ class DiskAnnIndex(BaseIndex):
                 f"Timescale's vector index only supports cosine distance, but distance_type was {distance_type}"
             )
 
-        with_clauses = []
+        with_clauses: list[str] = []
         if self.search_list_size is not None:
             with_clauses.append(f"search_list_size = {self.search_list_size}")
         if self.num_neighbors is not None:
@@ -266,7 +269,7 @@ class DiskAnnIndex(BaseIndex):
 
 class QueryParams:
     def __init__(self, params: dict[str, Any]) -> None:
-        self.params = params
+        self.params: dict[str, Any] = params
 
     def get_statements(self) -> list[str]:
         return ["SET LOCAL " + key + " = " + str(value) for key, value in self.params.items()]
@@ -274,7 +277,7 @@ class QueryParams:
 
 class DiskAnnIndexParams(QueryParams):
     def __init__(self, search_list_size: int | None = None, rescore: int | None = None) -> None:
-        params = {}
+        params: dict[str, Any] = {}
         if search_list_size is not None:
             params["diskann.query_search_list_size"] = search_list_size
         if rescore is not None:
@@ -301,7 +304,7 @@ SEARCH_RESULT_DISTANCE_IDX = 4
 
 class UUIDTimeRange:
     @staticmethod
-    def _parse_datetime(input_datetime: datetime | str):
+    def _parse_datetime(input_datetime: datetime | str | None) -> datetime | None:
         """
         Parse a datetime object or string representation of a datetime.
 
@@ -335,8 +338,8 @@ class UUIDTimeRange:
         start_date: datetime | str | None = None,
         end_date: datetime | str | None = None,
         time_delta: timedelta | None = None,
-        start_inclusive=True,
-        end_inclusive=False,
+        start_inclusive: bool = True,
+        end_inclusive: bool = False,
     ):
         """
         A UUIDTimeRange is a time range predicate on the UUID Version 1 timestamps.
@@ -367,20 +370,20 @@ class UUIDTimeRange:
             else:
                 raise Exception("time_delta, start_date and end_date cannot all be specified at the same time")
 
-        self.start_date = start_date
-        self.end_date = end_date
-        self.start_inclusive = start_inclusive
-        self.end_inclusive = end_inclusive
+        self.start_date: datetime | None = start_date
+        self.end_date: datetime | None = end_date
+        self.start_inclusive: bool = start_inclusive
+        self.end_inclusive: bool = end_inclusive
 
-    def __str__(self):
+    def __str__(self) -> str:
         start_str = f"[{self.start_date}" if self.start_inclusive else f"({self.start_date}"
         end_str = f"{self.end_date}]" if self.end_inclusive else f"{self.end_date})"
 
         return f"UUIDTimeRange {start_str}, {end_str}"
 
-    def build_query(self, params: list) -> tuple[str, list]:
+    def build_query(self, params: list[Any]) -> tuple[str, list[Any]]:
         column = "uuid_timestamp(id)"
-        queries = []
+        queries: list[str] = []
         if self.start_date is not None:
             if self.start_inclusive:
                 queries.append(f"{column} >= ${len(params)+1}")
@@ -397,13 +400,13 @@ class UUIDTimeRange:
 
 
 class Predicates:
-    logical_operators = {
+    logical_operators: dict[str, str] = {
         "AND": "AND",
         "OR": "OR",
         "NOT": "NOT",
     }
 
-    operators_mapping = {
+    operators_mapping: dict[str, str] = {
         "=": "=",
         "==": "=",
         ">=": ">=",
@@ -414,7 +417,7 @@ class Predicates:
         "@>": "@>",  # array contains
     }
 
-    PredicateValue = str | int | float | datetime | list | tuple
+    PredicateValue = str | int | float | datetime | list[Any] | tuple[Any, ...]
 
     def __init__(
         self,
@@ -425,7 +428,7 @@ class Predicates:
             str,
             PredicateValue,
         ],
-        operator: str = "AND",
+        operator: Literal["AND", "OR", "NOT"] = "AND",
     ):
         """
         Predicates class defines predicates on the object metadata.
@@ -442,11 +445,17 @@ class Predicates:
         """
         if operator not in self.logical_operators:
             raise ValueError(f"invalid operator: {operator}")
-        self.operator = operator
+        self.operator: str = operator
         if isinstance(clauses[0], str):
             if len(clauses) != 3 or not (isinstance(clauses[1], str) and isinstance(clauses[2], self.PredicateValue)):
                 raise ValueError(f"Invalid clause format: {clauses}")
-            self.clauses = [(clauses[0], clauses[1], clauses[2])]
+            self.clauses: list[
+                Predicates
+                | tuple[str, Predicates.PredicateValue]
+                | tuple[str, str, Predicates.PredicateValue]
+                | str
+                | Predicates.PredicateValue
+            ] = [clauses]
         else:
             self.clauses = list(clauses)
 
@@ -459,7 +468,7 @@ class Predicates:
             str,
             PredicateValue,
         ],
-    ):
+    ) -> None:
         """
         Add a clause to the predicates object.
 
@@ -472,42 +481,42 @@ class Predicates:
         if isinstance(clause[0], str):
             if len(clause) != 3 or not (isinstance(clause[1], str) and isinstance(clause[2], self.PredicateValue)):
                 raise ValueError(f"Invalid clause format: {clause}")
-            self.clauses.append((clause[0], clause[1], clause[2]))
+            self.clauses.append(clause)
         else:
             self.clauses.extend(list(clause))
 
-    def __and__(self, other):
+    def __and__(self, other: "Predicates") -> "Predicates":
         new_predicates = Predicates(self, other, operator="AND")
         return new_predicates
 
-    def __or__(self, other):
+    def __or__(self, other: "Predicates") -> "Predicates":
         new_predicates = Predicates(self, other, operator="OR")
         return new_predicates
 
-    def __invert__(self):
+    def __invert__(self) -> "Predicates":
         new_predicates = Predicates(self, operator="NOT")
         return new_predicates
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Predicates):
             return False
 
         return self.operator == other.operator and self.clauses == other.clauses
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.operator:
             return f"{self.operator}({', '.join(repr(clause) for clause in self.clauses)})"
         else:
             return repr(self.clauses)
 
-    def build_query(self, params: list) -> tuple[str, list]:
+    def build_query(self, params: list[Any]) -> tuple[str, list[Any]]:
         """
         Build the SQL query string and parameters for the predicates object.
         """
         if not self.clauses:
             return "", []
 
-        where_conditions = []
+        where_conditions: list[str] = []
 
         for clause in self.clauses:
             if isinstance(clause, Predicates):
@@ -536,7 +545,7 @@ class Predicates:
                         where_conditions.append(f"uuid_timestamp(id) {operator} {param_name}")
                     params.append(value)
 
-                elif operator == "@>" and (isinstance(value, list | tuple)):
+                elif operator == "@>" and isinstance(value, list | tuple):
                     if len(value) == 0:
                         raise ValueError("Invalid value. Empty lists and empty tuples are not supported.")
                     json_value = json.dumps(value)
@@ -555,7 +564,7 @@ class Predicates:
                     params.append(value)
 
         if self.operator == "NOT":
-            or_clauses = (" OR ").join(where_conditions)
+            or_clauses = " OR ".join(where_conditions)
             # use IS DISTINCT FROM to treat all-null clauses as False and pass the filter
             where_clause = f"TRUE IS DISTINCT FROM ({or_clauses})"
         else:
@@ -594,11 +603,11 @@ class QueryBuilder:
         schema_name
             The schema name for the table (optional, uses the database's default schema if not specified).
         """
-        self.table_name = table_name
-        self.schema_name = schema_name
-        self.num_dimensions = num_dimensions
+        self.table_name: str = table_name
+        self.schema_name: str | None = schema_name
+        self.num_dimensions: int = num_dimensions
         if distance_type == "cosine" or distance_type == "<=>":
-            self.distance_type = "<=>"
+            self.distance_type: str = "<=>"
         elif distance_type == "euclidean" or distance_type == "<->" or distance_type == "l2":
             self.distance_type = "<->"
         else:
@@ -610,12 +619,12 @@ class QueryBuilder:
         if time_partition_interval is not None and id_type.lower() != "uuid":
             raise ValueError("time partitioning is only supported for uuid id_type")
 
-        self.id_type = id_type.lower()
-        self.time_partition_interval = time_partition_interval
-        self.infer_filters = infer_filters
+        self.id_type: str = id_type.lower()
+        self.time_partition_interval: timedelta | None = time_partition_interval
+        self.infer_filters: bool = infer_filters
 
     @staticmethod
-    def _quote_ident(ident):
+    def _quote_ident(ident: str) -> str:
         """
         Quotes an identifier to prevent SQL injection.
 
@@ -630,13 +639,13 @@ class QueryBuilder:
         """
         return '"{}"'.format(ident.replace('"', '""'))
 
-    def _quoted_table_name(self):
+    def _quoted_table_name(self) -> str:
         if self.schema_name is not None:
             return self._quote_ident(self.schema_name) + "." + self._quote_ident(self.table_name)
         else:
             return self._quote_ident(self.table_name)
 
-    def get_row_exists_query(self):
+    def get_row_exists_query(self) -> str:
         """
         Generates a query to check if any rows exist in the table.
 
@@ -646,7 +655,7 @@ class QueryBuilder:
         """
         return f"SELECT 1 FROM {self._quoted_table_name()} LIMIT 1"
 
-    def get_upsert_query(self):
+    def get_upsert_query(self) -> str:
         """
         Generates an upsert query.
 
@@ -659,7 +668,7 @@ class QueryBuilder:
             f"VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING"
         )
 
-    def get_approx_count_query(self):
+    def get_approx_count_query(self) -> str:
         """
         Generate a query to find the approximate count of records in the table.
 
@@ -670,8 +679,7 @@ class QueryBuilder:
         # todo optimize with approx
         return f"SELECT COUNT(*) as cnt FROM {self._quoted_table_name()}"
 
-    # | export
-    def get_create_query(self):
+    def get_create_query(self) -> str:
         """
         Generates a query to create the tables, indexes, and extensions needed to store the vector data.
 
@@ -718,58 +726,53 @@ class QueryBuilder:
                     time_partitioning_func=>'public.uuid_timestamp',
                     chunk_time_interval => '{str(self.time_partition_interval.total_seconds())} seconds'::interval);
             """
-        return """
+        return f"""
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS vectorscale;
 
 
-CREATE TABLE IF NOT EXISTS {table_name} (
-    id {id_type} PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS {self._quoted_table_name()} (
+    id {self.id_type} PRIMARY KEY,
     metadata JSONB,
     contents TEXT,
-    embedding VECTOR({dimensions})
+    embedding VECTOR({self.num_dimensions})
 );
 
-CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb_path_ops);
+CREATE INDEX IF NOT EXISTS {self._quote_ident(self.table_name + "_meta_idx")} ON {self._quoted_table_name()}
+USING GIN(metadata jsonb_path_ops);
 
 {hypertable_sql}
-""".format(
-            table_name=self._quoted_table_name(),
-            id_type=self.id_type,
-            index_name=self._quote_ident(self.table_name + "_meta_idx"),
-            dimensions=self.num_dimensions,
-            hypertable_sql=hypertable_sql,
-        )
+"""
 
-    def _get_embedding_index_name_quoted(self):
+    def _get_embedding_index_name_quoted(self) -> str:
         return self._quote_ident(self.table_name + "_embedding_idx")
 
-    def _get_schema_qualified_embedding_index_name_quoted(self):
+    def _get_schema_qualified_embedding_index_name_quoted(self) -> str:
         if self.schema_name is not None:
             return self._quote_ident(self.schema_name) + "." + self._get_embedding_index_name_quoted()
         else:
             return self._get_embedding_index_name_quoted()
 
-    def drop_embedding_index_query(self):
+    def drop_embedding_index_query(self) -> str:
         return f"DROP INDEX IF EXISTS {self._get_schema_qualified_embedding_index_name_quoted()};"
 
-    def delete_all_query(self):
+    def delete_all_query(self) -> str:
         return f"TRUNCATE {self._quoted_table_name()};"
 
-    def delete_by_ids_query(self, ids: list[uuid.UUID] | list[str]) -> tuple[str, list]:
+    def delete_by_ids_query(self, ids: list[uuid.UUID] | list[str]) -> tuple[str, list[Any]]:
         query = f"DELETE FROM {self._quoted_table_name()} WHERE id = ANY($1::{self.id_type}[]);"
         return (query, [ids])
 
-    def delete_by_metadata_query(self, filter: dict[str, str] | list[dict[str, str]]) -> tuple[str, list]:
+    def delete_by_metadata_query(self, filter: dict[str, str] | list[dict[str, str]]) -> tuple[str, list[Any]]:
         params: list[Any] = []
         (where, params) = self._where_clause_for_filter(params, filter)
         query = f"DELETE FROM {self._quoted_table_name()} WHERE {where};"
         return (query, params)
 
-    def drop_table_query(self):
+    def drop_table_query(self) -> str:
         return f"DROP TABLE IF EXISTS {self._quoted_table_name()};"
 
-    def default_max_db_connection_query(self):
+    def default_max_db_connection_query(self) -> str:
         """
         Generates a query to get the default max db connections. This uses a heuristic to determine the max connections
         based on the max_connections setting in postgres
@@ -807,8 +810,8 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         return query
 
     def _where_clause_for_filter(
-        self, params: list, filter: dict[str, str] | list[dict[str, str]] | None
-    ) -> tuple[str, list]:
+        self, params: list[Any], filter: dict[str, str] | list[dict[str, str]] | None
+    ) -> tuple[str, list[Any]]:
         if filter is None:
             return "TRUE", params
 
@@ -834,7 +837,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         filter: dict[str, str] | list[dict[str, str]] | None = None,
         predicates: Predicates | None = None,
         uuid_time_filter: UUIDTimeRange | None = None,
-    ) -> tuple[str, list]:
+    ) -> tuple[str, list[Any]]:
         """
         Generates a similarity query.
 
@@ -876,9 +879,6 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
             where_clauses.append(where_predicates)
 
         if uuid_time_filter is not None:
-            # if self.time_partition_interval is None:
-            # raise ValueError("""uuid_time_filter is only supported when time_partitioning is enabled.""")
-
             (where_time, params) = uuid_time_filter.build_query(params)
             where_clauses.append(where_time)
 
@@ -894,7 +894,7 @@ CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIN(metadata jsonb
         {order_by_clause}
         LIMIT {limit}
         """
-        return (query, params)
+        return query, params
 
 
 class Async(QueryBuilder):
@@ -904,7 +904,7 @@ class Async(QueryBuilder):
         table_name: str,
         num_dimensions: int,
         distance_type: str = "cosine",
-        id_type="UUID",
+        id_type: Literal["UUID"] | Literal["TEXT"] = "UUID",
         time_partition_interval: timedelta | None = None,
         max_db_connections: int | None = None,
         infer_filters: bool = True,
@@ -941,10 +941,10 @@ class Async(QueryBuilder):
             infer_filters,
             schema_name,
         )
-        self.service_url = service_url
-        self.pool = None
-        self.max_db_connections = max_db_connections
-        self.time_partition_interval = time_partition_interval
+        self.service_url: str = service_url
+        self.pool: asyncpg.Pool | None = None
+        self.max_db_connections: int | None = max_db_connections
+        self.time_partition_interval: timedelta | None = time_partition_interval
 
     async def _default_max_db_connections(self) -> int:
         """
@@ -960,7 +960,7 @@ class Async(QueryBuilder):
         await conn.close()
         return num_connections
 
-    async def connect(self):
+    async def connect(self) -> asyncpg.pool.PoolAcquireContext:
         """
         Establishes a connection to a PostgreSQL database using asyncpg.
 
@@ -972,7 +972,7 @@ class Async(QueryBuilder):
             if self.max_db_connections is None:
                 self.max_db_connections = await self._default_max_db_connections()
 
-            async def init(conn):
+            async def init(conn: asyncpg.Connection) -> None:
                 await register_vector(conn)
                 # decode to a dict, but accept a string as input in upsert
                 await conn.set_type_codec("jsonb", encoder=str, decoder=json.loads, schema="pg_catalog")
@@ -985,11 +985,11 @@ class Async(QueryBuilder):
             )
         return self.pool.acquire()
 
-    async def close(self):
+    async def close(self) -> None:
         if self.pool is not None:
             await self.pool.close()
 
-    async def table_is_empty(self):
+    async def table_is_empty(self) -> bool:
         """
         Checks if the table is empty.
 
@@ -1002,7 +1002,7 @@ class Async(QueryBuilder):
             rec = await pool.fetchrow(query)
             return rec is None
 
-    def munge_record(self, records) -> Iterable[tuple[uuid.UUID, str, str, list[float]]]:
+    def munge_record(self, records: list[tuple[Any, ...]]) -> Iterable[tuple[uuid.UUID, str, str, list[float]]]:
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
             records = map(lambda item: Async._convert_record_meta_to_json(item), records)
@@ -1010,12 +1010,12 @@ class Async(QueryBuilder):
         return records
 
     @staticmethod
-    def _convert_record_meta_to_json(item):
+    def _convert_record_meta_to_json(item: tuple[Any, ...]) -> tuple[uuid.UUID, str, str, list[float]]:
         if not isinstance(item[1], dict):
             raise ValueError("Cannot mix dictionary and string metadata fields in the same upsert")
         return item[0], json.dumps(item[1]), item[2], item[3]
 
-    async def upsert(self, records):
+    async def upsert(self, records: list[tuple[Any, ...]]) -> None:
         """
         Performs upsert operation for multiple records.
 
@@ -1033,7 +1033,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.executemany(query, records)
 
-    async def create_tables(self):
+    async def create_tables(self) -> None:
         """
         Creates necessary tables.
 
@@ -1048,7 +1048,7 @@ class Async(QueryBuilder):
         await conn.execute(query)
         await conn.close()
 
-    async def delete_all(self, drop_index=True):
+    async def delete_all(self, drop_index: bool = True) -> None:
         """
         Deletes all data. Also drops the index if `drop_index` is true.
 
@@ -1062,7 +1062,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def delete_by_ids(self, ids: list[uuid.UUID] | list[str]):
+    async def delete_by_ids(self, ids: list[uuid.UUID] | list[str]) -> list[asyncpg.Record]:
         """
         Delete records by id.
         """
@@ -1070,7 +1070,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
-    async def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]):
+    async def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]) -> list[asyncpg.Record]:
         """
         Delete records by metadata filters.
         """
@@ -1078,7 +1078,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
-    async def drop_table(self):
+    async def drop_table(self) -> None:
         """
         Drops the table
 
@@ -1090,7 +1090,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def _get_approx_count(self):
+    async def _get_approx_count(self) -> int:
         """
         Retrieves an approximate count of records in the table.
 
@@ -1103,7 +1103,7 @@ class Async(QueryBuilder):
             rec = await pool.fetchrow(query)
             return rec[0]
 
-    async def drop_embedding_index(self):
+    async def drop_embedding_index(self) -> None:
         """
         Drop any index on the emedding
 
@@ -1115,7 +1115,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             await pool.execute(query)
 
-    async def create_embedding_index(self, index: BaseIndex):
+    async def create_embedding_index(self, index: BaseIndex) -> None:
         """
         Creates an index for the table.
 
@@ -1143,7 +1143,7 @@ class Async(QueryBuilder):
         predicates: Predicates | None = None,
         uuid_time_filter: UUIDTimeRange | None = None,
         query_params: QueryParams | None = None,
-    ):
+    ) -> list[asyncpg.Record]:
         """
         Retrieves similar records using a similarity query.
 
@@ -1189,7 +1189,7 @@ class Sync:
         table_name: str,
         num_dimensions: int,
         distance_type: str = "cosine",
-        id_type="UUID",
+        id_type: Literal["UUID"] | Literal["TEXT"] = "UUID",
         time_partition_interval: timedelta | None = None,
         max_db_connections: int | None = None,
         infer_filters: bool = True,
@@ -1226,13 +1226,13 @@ class Sync:
             infer_filters,
             schema_name,
         )
-        self.service_url = service_url
-        self.pool = None
-        self.max_db_connections = max_db_connections
-        self.time_partition_interval = time_partition_interval
+        self.service_url: str = service_url
+        self.pool: psycopg2.pool.SimpleConnectionPool | None = None
+        self.max_db_connections: int | None = max_db_connections
+        self.time_partition_interval: timedelta | None = time_partition_interval
         psycopg2.extras.register_uuid()
 
-    def default_max_db_connections(self):
+    def default_max_db_connections(self) -> int:
         """
         Gets a default value for the number of max db connections to use.
         """
@@ -1245,7 +1245,7 @@ class Sync:
         return num_connections[0]
 
     @contextmanager
-    def connect(self):
+    def connect(self) -> Iterable[psycopg2.extensions.connection]:
         """
         Establishes a connection to a PostgreSQL database using psycopg2 and allows it's
         use in a context manager.
@@ -1269,11 +1269,11 @@ class Sync:
         finally:
             self.pool.putconn(connection)
 
-    def close(self):
+    def close(self) -> None:
         if self.pool is not None:
             self.pool.closeall()
 
-    def _translate_to_pyformat(self, query_string, params):
+    def _translate_to_pyformat(self, query_string: str, params: list[Any] | None) -> tuple[str, dict[str, Any]]:
         """
         Translates dollar sign number parameters and list parameters to pyformat strings.
 
@@ -1286,7 +1286,7 @@ class Sync:
             dict: A dictionary mapping parameter numbers to their values.
         """
 
-        translated_params = {}
+        translated_params: dict[str, Any] = {}
         if params is not None:
             for idx, param in enumerate(params):
                 translated_params[str(idx + 1)] = param
@@ -1305,7 +1305,7 @@ class Sync:
         self.translated_queries[query_string] = translated_string
         return self.translated_queries[query_string], translated_params
 
-    def table_is_empty(self):
+    def table_is_empty(self) -> bool:
         """
         Checks if the table is empty.
 
@@ -1319,7 +1319,7 @@ class Sync:
             rec = cur.fetchone()
             return rec is None
 
-    def munge_record(self, records) -> Iterable[tuple[uuid.UUID, str, str, list[float]]]:
+    def munge_record(self, records: list[tuple[Any, ...]]) -> Iterable[tuple[uuid.UUID, str, str, list[float]]]:
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
             records = map(lambda item: Sync._convert_record_meta_to_json(item), records)
@@ -1327,12 +1327,12 @@ class Sync:
         return records
 
     @staticmethod
-    def _convert_record_meta_to_json(item):
+    def _convert_record_meta_to_json(item: tuple[Any, ...]) -> tuple[uuid.UUID, str, str, list[float]]:
         if not isinstance(item[1], dict):
             raise ValueError("Cannot mix dictionary and string metadata fields in the same upsert")
         return item[0], json.dumps(item[1]), item[2], item[3]
 
-    def upsert(self, records):
+    def upsert(self, records: list[tuple[Any, ...]]) -> None:
         """
         Performs upsert operation for multiple records.
 
@@ -1351,7 +1351,7 @@ class Sync:
         with self.connect() as conn, conn.cursor() as cur:
             cur.executemany(query, records)
 
-    def create_tables(self):
+    def create_tables(self) -> None:
         """
         Creates necessary tables.
 
@@ -1368,7 +1368,7 @@ class Sync:
         conn.commit()
         conn.close()
 
-    def delete_all(self, drop_index=True):
+    def delete_all(self, drop_index: bool = True) -> None:
         """
         Deletes all data. Also drops the index if `drop_index` is true.
 
@@ -1382,7 +1382,7 @@ class Sync:
         with self.connect() as conn, conn.cursor() as cur:
             cur.execute(query)
 
-    def delete_by_ids(self, ids: list[uuid.UUID] | list[str]):
+    def delete_by_ids(self, ids: list[uuid.UUID] | list[str]) -> None:
         """
         Delete records by id.
 
@@ -1396,7 +1396,7 @@ class Sync:
         with self.connect() as conn, conn.cursor() as cur:
             cur.execute(query, params)
 
-    def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]):
+    def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]) -> None:
         """
         Delete records by metadata filters.
         """
@@ -1405,7 +1405,7 @@ class Sync:
         with self.connect() as conn, conn.cursor() as cur:
             cur.execute(query, params)
 
-    def drop_table(self):
+    def drop_table(self) -> None:
         """
         Drops the table
 
@@ -1417,7 +1417,7 @@ class Sync:
         with self.connect() as conn, conn.cursor() as cur:
             cur.execute(query)
 
-    def _get_approx_count(self):
+    def _get_approx_count(self) -> int:
         """
         Retrieves an approximate count of records in the table.
 
@@ -1431,19 +1431,19 @@ class Sync:
             rec = cur.fetchone()
             return rec[0]
 
-    def drop_embedding_index(self):
+    def drop_embedding_index(self) -> None:
         """
         Drop any index on the emedding
 
         Returns
-        -------
+        --------
             None
         """
         query = self.builder.drop_embedding_index_query()
         with self.connect() as conn, conn.cursor() as cur:
             cur.execute(query)
 
-    def create_embedding_index(self, index: BaseIndex):
+    def create_embedding_index(self, index: BaseIndex) -> None:
         """
         Creates an index on the embedding for the table.
 
@@ -1468,7 +1468,7 @@ class Sync:
         predicates: Predicates | None = None,
         uuid_time_filter: UUIDTimeRange | None = None,
         query_params: QueryParams | None = None,
-    ):
+    ) -> list[dict[str, Any]]:
         """
         Retrieves similar records using a similarity query.
 
