@@ -306,7 +306,7 @@ async def test_vector(service_url: str, schema: str) -> None:
     assert not await vec.table_is_empty()
 
     # check all the possible ways to specify a date range
-    async def search_date(start_date, end_date, expected):
+    async def search_date(start_date: datetime | str | None, end_date: datetime | str | None, expected: int) -> None:
         # using uuid_time_filter
         rec = await vec.search(
             [1.0, 2.0],

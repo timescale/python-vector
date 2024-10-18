@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any
 
 import psycopg2
 import pytest
@@ -11,7 +12,7 @@ from timescale_vector import client
 from timescale_vector.pgvectorizer import Vectorize
 
 
-def get_document(blog):
+def get_document(blog: dict[str, Any]) -> list[Document]:
     text_splitter = CharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -56,7 +57,7 @@ def test_pg_vectorizer(service_url: str) -> None:
             VALUES ('first', 'mat', 'first_post', 'personal', '2021-01-01');
         """)
 
-    def embed_and_write(blog_instances, vectorizer):
+    def embed_and_write(blog_instances: list[Any], vectorizer: Vectorize) -> None:
         TABLE_NAME = vectorizer.table_name_unquoted + "_embedding"
         embedding = OpenAIEmbeddings()
         vector_store = TimescaleVector(
