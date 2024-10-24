@@ -20,5 +20,5 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync
-    - name: Run Mypy
-      run: uv run mypy .
+    - name: Run Pyright
+      run: uv run pyright
