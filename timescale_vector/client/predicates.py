@@ -1,6 +1,12 @@
 import json
 from datetime import datetime
-from typing import Any, Literal, Union
+from typing import Any, Literal, Union, get_args, get_origin
+
+
+def get_runtime_types(typ) -> tuple[type, ...]:  # type: ignore
+    """Convert a type with generic parameters to runtime types.
+    Necessary because Generic types cant be passed to isinstance in python 3.10"""
+    return tuple(get_origin(t) or t for t in get_args(typ))  # type: ignore
 
 
 class Predicates:
@@ -51,7 +57,9 @@ class Predicates:
             raise ValueError(f"invalid operator: {operator}")
         self.operator: str = operator
         if isinstance(clauses[0], str):
-            if len(clauses) != 3 or not (isinstance(clauses[1], str) and isinstance(clauses[2], self.PredicateValue)):
+            if len(clauses) != 3 or not (
+                isinstance(clauses[1], str) and isinstance(clauses[2], get_runtime_types(self.PredicateValue))
+            ):
                 raise ValueError(f"Invalid clause format: {clauses}")
             self.clauses = [clauses]
         else:
@@ -77,11 +85,13 @@ class Predicates:
             or (field, value).
         """
         if isinstance(clause[0], str):
-            if len(clause) != 3 or not (isinstance(clause[1], str) and isinstance(clause[2], self.PredicateValue)):
+            if len(clause) != 3 or not (
+                isinstance(clause[1], str) and isinstance(clause[2], get_runtime_types(self.PredicateValue))
+            ):
                 raise ValueError(f"Invalid clause format: {clause}")
-            self.clauses.append(clause) # type: ignore
+            self.clauses.append(clause)  # type: ignore
         else:
-            self.clauses.extend(list(clause)) # type: ignore
+            self.clauses.extend(list(clause))  # type: ignore
 
     def __and__(self, other: "Predicates") -> "Predicates":
         new_predicates = Predicates(self, other, operator="AND")

@@ -6,50 +6,18 @@ from . import Record
 class Connection:
     # Transaction management
     async def execute(self, query: str, *args: Any, timeout: float | None = None) -> str: ...
-
     async def executemany(
-            self,
-            command: str,
-            args: Sequence[Sequence[Any]],
-            *,
-            timeout: float | None = None
+        self, command: str, args: Sequence[Sequence[Any]], *, timeout: float | None = None
     ) -> str: ...
-
-    async def fetch(
-            self,
-            query: str,
-            *args: Any,
-            timeout: float | None = None
-    ) -> list[Record]: ...
-
-    async def fetchval(
-            self,
-            query: str,
-            *args: Any,
-            column: int = 0,
-            timeout: float | None = None
-    ) -> Any: ...
-
-    async def fetchrow(
-            self,
-            query: str,
-            *args: Any,
-            timeout: float | None = None
-    ) -> Record | None: ...
-
+    async def fetch(self, query: str, *args: Any, timeout: float | None = None) -> list[Record]: ...
+    async def fetchval(self, query: str, *args: Any, column: int = 0, timeout: float | None = None) -> Any: ...
+    async def fetchrow(self, query: str, *args: Any, timeout: float | None = None) -> Record | None: ...
     async def set_type_codec(
-            self,
-            typename: str,
-            *,
-            schema: str = "public",
-            encoder: Any,
-            decoder: Any,
-            format: str = "text"
+        self, typename: str, *, schema: str = "public", encoder: Any, decoder: Any, format: str = "text"
     ) -> None: ...
 
     # Transaction context
     def transaction(self, *, isolation: str = "read_committed") -> Transaction: ...
-
     async def close(self, *, timeout: float | None = None) -> None: ...
 
 class Transaction:

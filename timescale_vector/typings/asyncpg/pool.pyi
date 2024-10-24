@@ -1,4 +1,5 @@
-from typing import Any, AsyncContextManager
+from contextlib import AbstractAsyncContextManager
+from typing import Any
 
 from . import connection
 
@@ -13,6 +14,6 @@ class Pool:
     async def __aenter__(self) -> Pool: ...
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 
-class PoolAcquireContext(AsyncContextManager['connection.Connection']):
+class PoolAcquireContext(AbstractAsyncContextManager["connection.Connection"]):
     async def __aenter__(self) -> connection.Connection: ...
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...

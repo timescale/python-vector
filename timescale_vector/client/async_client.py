@@ -92,14 +92,12 @@ class Async(QueryBuilder):
                 self.max_db_connections = await self._default_max_db_connections()
 
             async def init(conn: Connection) -> None:
-                await register_vector(conn)
+                schema = await self._detect_vector_schema(conn)
+                if schema is None:
+                    raise ValueError("pg_vector extension not found")
+                await register_vector(conn, schema=schema)
                 # decode to a dict, but accept a string as input in upsert
-                await conn.set_type_codec(
-                    "jsonb",
-                    encoder=str,
-                    decoder=json.loads,
-                    schema="pg_catalog"
-                )
+                await conn.set_type_codec("jsonb", encoder=str, decoder=json.loads, schema="pg_catalog")
 
             self.pool = await create_pool(
                 dsn=self.service_url,
@@ -127,12 +125,21 @@ class Async(QueryBuilder):
             rec = await pool.fetchrow(query)
             return rec is None
 
-
     def munge_record(self, records: list[tuple[Any, ...]]) -> list[tuple[uuid.UUID, str, str, list[float]]]:
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
             return list(map(lambda item: Async._convert_record_meta_to_json(item), records))
         return records
+
+    async def _detect_vector_schema(self, conn: Connection) -> str | None:
+        query = """
+        select n.nspname
+            from pg_extension x
+            inner join pg_namespace n on (x.extnamespace = n.oid)
+            where x.extname = 'vector';
+        """
+
+        return await conn.fetchval(query)
 
     @staticmethod
     def _convert_record_meta_to_json(item: tuple[Any, ...]) -> tuple[uuid.UUID, str, str, list[float]]:

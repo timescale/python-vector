@@ -1,8 +1,10 @@
-from typing import Any, Protocol, TypeVar, Sequence
-from . import pool, connection
+from collections.abc import Sequence
+from typing import Any, Protocol, TypeVar
+
+from . import connection, pool
 
 # Core types
-T = TypeVar('T')
+T = TypeVar("T")
 
 class Record(Protocol):
     def __getitem__(self, key: int | str) -> Any: ...
@@ -30,9 +32,8 @@ async def connect(
     user: str | None = None,
     password: str | None = None,
     database: str | None = None,
-    timeout: int = 60
+    timeout: int = 60,
 ) -> Connection: ...
-
 async def create_pool(
     dsn: str | None = None,
     *,
@@ -42,5 +43,5 @@ async def create_pool(
     max_inactive_connection_lifetime: float = 300.0,
     setup: Any | None = None,
     init: Any | None = None,
-    **connect_kwargs: Any
+    **connect_kwargs: Any,
 ) -> Pool: ...

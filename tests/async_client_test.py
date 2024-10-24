@@ -17,7 +17,7 @@ from timescale_vector.client import (
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("schema", ["tschema", None])
+@pytest.mark.parametrize("schema", ["temp", None])
 async def test_vector(service_url: str, schema: str) -> None:
     vec = Async(service_url, "data_table", 2, schema_name=schema)
     await vec.drop_table()
@@ -338,7 +338,7 @@ async def test_vector(service_url: str, schema: str) -> None:
         rec = await vec.search([1.0, 2.0], limit=4, filter=filter)
         assert len(rec) == expected
         # using predicates
-        predicates: list[tuple[str, str, str|datetime]] = []
+        predicates: list[tuple[str, str, str | datetime]] = []
         if start_date is not None:
             predicates.append(("__uuid_timestamp", ">=", start_date))
         if end_date is not None:
