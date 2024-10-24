@@ -17,7 +17,7 @@ def get_document(blog: dict[str, Any]) -> list[Document]:
         chunk_size=1000,
         chunk_overlap=200,
     )
-    docs = []
+    docs: list[Document] = []
     for chunk in text_splitter.split_text(blog["contents"]):
         content = f"Author {blog['author']}, title: {blog['title']}, contents:{chunk}"
         metadata = {
@@ -71,7 +71,7 @@ def test_pg_vectorizer(service_url: str) -> None:
         metadata_for_delete = [{"blog_id": blog["locked_id"]} for blog in blog_instances]
         vector_store.delete_by_metadata(metadata_for_delete)
 
-        documents = []
+        documents: list[Document] = []
         for blog in blog_instances:
             # skip blogs that are not published yet, or are deleted (will be None because of left join)
             if blog["published_time"] is not None:

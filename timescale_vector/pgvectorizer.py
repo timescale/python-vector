@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 __all__ = ["Vectorize"]
 
 import re

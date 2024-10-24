@@ -234,7 +234,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         assert len(rec) == expected
 
         # using filters
-        filter = {}
+        filter: dict[str, str|datetime] = {}
         if start_date is not None:
             filter["__start_date"] = start_date
         if end_date is not None:
@@ -250,7 +250,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         rec = vec.search([1.0, 2.0], limit=4, filter=filter)
         assert len(rec) == expected
         # using predicates
-        predicates = []
+        predicates: list[tuple[str, str, str|datetime]] = []
         if start_date is not None:
             predicates.append(("__uuid_timestamp", ">=", start_date))
         if end_date is not None:

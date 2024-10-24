@@ -1,12 +1,12 @@
 import json
 import uuid
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from datetime import datetime, timedelta
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from asyncpg import Connection, Pool, Record, connect, create_pool
 from asyncpg.pool import PoolAcquireContext
-from pgvector.asyncpg import register_vector
+from pgvector.asyncpg import register_vector  # type: ignore
 
 from timescale_vector.client.index import BaseIndex, QueryParams
 from timescale_vector.client.predicates import Predicates
@@ -77,7 +77,7 @@ class Async(QueryBuilder):
         await conn.close()
         if num_connections is None:
             return 10
-        return num_connections  # type: ignore
+        return cast(int, num_connections)
 
     async def connect(self) -> PoolAcquireContext:
         """
@@ -94,7 +94,12 @@ class Async(QueryBuilder):
             async def init(conn: Connection) -> None:
                 await register_vector(conn)
                 # decode to a dict, but accept a string as input in upsert
-                await conn.set_type_codec("jsonb", encoder=str, decoder=json.loads, schema="pg_catalog")
+                await conn.set_type_codec(
+                    "jsonb",
+                    encoder=str,
+                    decoder=json.loads,
+                    schema="pg_catalog"
+                )
 
             self.pool = await create_pool(
                 dsn=self.service_url,
@@ -122,12 +127,12 @@ class Async(QueryBuilder):
             rec = await pool.fetchrow(query)
             return rec is None
 
-    def munge_record(self, records: list[tuple[Any, ...]]) -> Iterable[tuple[uuid.UUID, str, str, list[float]]]:
+
+    def munge_record(self, records: list[tuple[Any, ...]]) -> list[tuple[uuid.UUID, str, str, list[float]]]:
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
-            munged_records = map(lambda item: Async._convert_record_meta_to_json(item), records)
-
-        return munged_records if metadata_is_dict else records
+            return list(map(lambda item: Async._convert_record_meta_to_json(item), records))
+        return records
 
     @staticmethod
     def _convert_record_meta_to_json(item: tuple[Any, ...]) -> tuple[uuid.UUID, str, str, list[float]]:
@@ -188,7 +193,7 @@ class Async(QueryBuilder):
         """
         (query, params) = self.builder.delete_by_ids_query(ids)
         async with await self.connect() as pool:
-            return await pool.fetch(query, *params)  # type: ignore
+            return await pool.fetch(query, *params)
 
     async def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]) -> list[Record]:
         """
@@ -196,7 +201,7 @@ class Async(QueryBuilder):
         """
         (query, params) = self.builder.delete_by_metadata_query(filter)
         async with await self.connect() as pool:
-            return await pool.fetch(query, *params)  # type: ignore
+            return await pool.fetch(query, *params)
 
     async def drop_table(self) -> None:
         """
@@ -221,7 +226,7 @@ class Async(QueryBuilder):
         query = self.builder.get_approx_count_query()
         async with await self.connect() as pool:
             rec = await pool.fetchrow(query)
-            return rec[0] if rec is not None else 0
+            return cast(int, rec[0] if rec is not None else 0)
 
     async def drop_embedding_index(self) -> None:
         """
@@ -248,7 +253,6 @@ class Async(QueryBuilder):
         -------
             None
         """
-        # todo: can we make geting the records lazy?
         num_records = await self._get_approx_count()
         query = self.builder.create_embedding_index_query(index, lambda: num_records)
 
@@ -294,7 +298,7 @@ class Async(QueryBuilder):
                 statements = query_params.get_statements()
                 for statement in statements:
                     await pool.execute(statement)
-                return await pool.fetch(query, *params)  # type: ignore
+                return await pool.fetch(query, *params)
         else:
             async with await self.connect() as pool:
-                return await pool.fetch(query, *params)  # type: ignore
+                return await pool.fetch(query, *params)

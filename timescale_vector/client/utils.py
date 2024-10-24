@@ -31,7 +31,7 @@ def uuid_from_time(
     """
     if time_arg is None:
         return uuid.uuid1(node, clock_seq)
-    if hasattr(time_arg, "utctimetuple"):
+    if isinstance(time_arg, datetime):
         # this is different from the Cassandra version,
         # we assume that a naive datetime is in system time and convert it to UTC
         # we do this because naive datetimes are interpreted as timestamps (without timezone) in postgres

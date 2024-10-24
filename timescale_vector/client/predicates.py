@@ -21,7 +21,7 @@ class Predicates:
         "@>": "@>",  # array contains
     }
 
-    PredicateValue = str | int | float | datetime | list | tuple  # type: ignore
+    PredicateValue = str | int | float | datetime | list[Any] | tuple[Any]
 
     def __init__(
         self,
@@ -53,13 +53,7 @@ class Predicates:
         if isinstance(clauses[0], str):
             if len(clauses) != 3 or not (isinstance(clauses[1], str) and isinstance(clauses[2], self.PredicateValue)):
                 raise ValueError(f"Invalid clause format: {clauses}")
-            self.clauses: list[
-                Predicates
-                | tuple[str, Predicates.PredicateValue]
-                | tuple[str, str, Predicates.PredicateValue]
-                | str
-                | Predicates.PredicateValue
-            ] = [clauses]
+            self.clauses = [clauses]
         else:
             self.clauses = list(clauses)
 
@@ -85,9 +79,9 @@ class Predicates:
         if isinstance(clause[0], str):
             if len(clause) != 3 or not (isinstance(clause[1], str) and isinstance(clause[2], self.PredicateValue)):
                 raise ValueError(f"Invalid clause format: {clause}")
-            self.clauses.append(clause)
+            self.clauses.append(clause) # type: ignore
         else:
-            self.clauses.extend(list(clause))
+            self.clauses.extend(list(clause)) # type: ignore
 
     def __and__(self, other: "Predicates") -> "Predicates":
         new_predicates = Predicates(self, other, operator="AND")

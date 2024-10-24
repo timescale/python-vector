@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 import json
 import uuid
 from collections.abc import Callable, Mapping
@@ -261,7 +262,7 @@ USING GIN(metadata jsonb_path_ops);
             json_object = json.dumps(filter)
             params = params + [json_object]
         elif isinstance(filter, list):
-            any_params = []
+            any_params: list[str] = []
             for _idx, filter_dict in enumerate(filter, start=len(params) + 1):
                 any_params.append(json.dumps(filter_dict))
             where = f"metadata @> ANY(${len(params) + 1}::jsonb[])"
@@ -310,7 +311,7 @@ USING GIN(metadata jsonb_path_ops);
             if end_date is not None:
                 del filter["__end_date"]
 
-        where_clauses = []
+        where_clauses: list[str] = []
         if filter is not None:
             (where_filter, params) = self._where_clause_for_filter(params, filter)
             where_clauses.append(where_filter)

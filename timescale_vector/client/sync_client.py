@@ -1,16 +1,18 @@
 import json
 import re
 import uuid
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Literal
 
 import numpy as np
-import pgvector.psycopg2
-import psycopg2.extras
-import psycopg2.pool
 from numpy import ndarray
+from pgvector.psycopg2 import register_vector  # type: ignore
+from psycopg2 import connect
+from psycopg2.extensions import connection as PSYConnection
+from psycopg2.extras import DictCursor, register_uuid
+from psycopg2.pool import SimpleConnectionPool
 
 from timescale_vector.client.index import BaseIndex, QueryParams
 from timescale_vector.client.predicates import Predicates
@@ -65,17 +67,17 @@ class Sync:
             schema_name,
         )
         self.service_url: str = service_url
-        self.pool: psycopg2.pool.SimpleConnectionPool | None = None
+        self.pool: SimpleConnectionPool | None = None
         self.max_db_connections: int | None = max_db_connections
         self.time_partition_interval: timedelta | None = time_partition_interval
-        psycopg2.extras.register_uuid()
+        register_uuid()
 
     def default_max_db_connections(self) -> int:
         """
         Gets a default value for the number of max db connections to use.
         """
         query = self.builder.default_max_db_connection_query()
-        conn = psycopg2.connect(dsn=self.service_url)
+        conn = connect(dsn=self.service_url)
         with conn.cursor() as cur:
             cur.execute(query)
             num_connections = cur.fetchone()
@@ -83,7 +85,7 @@ class Sync:
         return num_connections[0]  # type: ignore
 
     @contextmanager
-    def connect(self) -> Iterator[psycopg2.extensions.connection]:
+    def connect(self) -> Iterator[PSYConnection]:
         """
         Establishes a connection to a PostgreSQL database using psycopg2 and allows it's
         use in a context manager.
@@ -92,15 +94,15 @@ class Sync:
             if self.max_db_connections is None:
                 self.max_db_connections = self.default_max_db_connections()
 
-            self.pool = psycopg2.pool.SimpleConnectionPool(
+            self.pool = SimpleConnectionPool(
                 1,
                 self.max_db_connections,
                 dsn=self.service_url,
-                cursor_factory=psycopg2.extras.DictCursor,
+                cursor_factory=DictCursor,
             )
 
         connection = self.pool.getconn()
-        pgvector.psycopg2.register_vector(connection)
+        register_vector(connection)
         try:
             yield connection
             connection.commit()
@@ -157,12 +159,12 @@ class Sync:
             rec = cur.fetchone()
             return rec is None
 
-    def munge_record(self, records: list[tuple[Any, ...]]) -> Iterable[tuple[uuid.UUID, str, str, list[float]]]:
+    def munge_record(self, records: list[tuple[Any, ...]]) -> list[tuple[uuid.UUID, str, str, list[float]]]:
         metadata_is_dict = isinstance(records[0][1], dict)
         if metadata_is_dict:
-            munged_records = map(lambda item: Sync._convert_record_meta_to_json(item), records)
+            return list(map(lambda item: Sync._convert_record_meta_to_json(item), records))
 
-        return munged_records if metadata_is_dict else records
+        return records
 
     @staticmethod
     def _convert_record_meta_to_json(item: tuple[Any, ...]) -> tuple[uuid.UUID, str, str, list[float]]:
@@ -200,7 +202,7 @@ class Sync:
         query = self.builder.get_create_query()
         # don't use a connection pool for this because the vector extension may not be installed yet
         # and if it's not installed, register_vector will fail.
-        conn = psycopg2.connect(dsn=self.service_url)
+        conn = connect(dsn=self.service_url)
         with conn.cursor() as cur:
             cur.execute(query)
         conn.commit()
