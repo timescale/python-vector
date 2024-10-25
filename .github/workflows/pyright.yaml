@@ -1,11 +1,11 @@
-name: Tests
+name: Type Checking
 
 on:
   pull_request:
     branches: [ main ]
 
 jobs:
-  pytest:
+  pyright:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -19,13 +19,6 @@ jobs:
       run: uv venv
     - name: Install dependencies
       run: |
-        uv pip install .
-        uv pip install .[dev]
-    - name: Start docker-compose 
-      run: docker compose up -d
-    - name: Run Test
-      run: uv run pytest
-    - name: Logs
-      run: docker compose logs
-    - name: Stop docker-compose
-      run: docker compose down
+        uv sync
+    - name: Run Pyright
+      run: uv run pyright
