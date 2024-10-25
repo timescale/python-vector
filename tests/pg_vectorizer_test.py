@@ -2,12 +2,12 @@ from datetime import timedelta
 from typing import Any
 
 import psycopg2
-import pytest
 from langchain.docstore.document import Document
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores.timescalevector import TimescaleVector
 from langchain_openai import OpenAIEmbeddings
 
+from tests.utils import http_recorder
 from timescale_vector import client
 from timescale_vector.pgvectorizer import Vectorize
 
@@ -31,7 +31,7 @@ def get_document(blog: dict[str, Any]) -> list[Document]:
     return docs
 
 
-@pytest.mark.skip(reason="requires OpenAI API key")
+@http_recorder.use_cassette("pg_vectorizer.yaml")
 def test_pg_vectorizer(service_url: str) -> None:
     with psycopg2.connect(service_url) as conn, conn.cursor() as cursor:
         for item in ["blog", "blog_embedding_work_queue", "blog_embedding"]:
