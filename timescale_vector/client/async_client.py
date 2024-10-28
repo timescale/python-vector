@@ -1,7 +1,6 @@
 import json
 import uuid
-from collections.abc import Mapping
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Literal, cast
 
 from asyncpg import Connection, Pool, Record, connect, create_pool
@@ -10,7 +9,7 @@ from pgvector.asyncpg import register_vector  # type: ignore
 
 from timescale_vector.client.index import BaseIndex, QueryParams
 from timescale_vector.client.predicates import Predicates
-from timescale_vector.client.query_builder import QueryBuilder
+from timescale_vector.client.query_builder import Filter, QueryBuilder
 from timescale_vector.client.uuid_time_range import UUIDTimeRange
 
 
@@ -26,6 +25,9 @@ class Async(QueryBuilder):
         max_db_connections: int | None = None,
         infer_filters: bool = True,
         schema_name: str | None = None,
+        embedding_table_name: str | None = None,
+        id_column_name: str = "embedding_uuid",
+        metadata_column_name: str | None = None,
     ) -> None:
         """
         Initializes a async client for storing vector data.
@@ -57,6 +59,9 @@ class Async(QueryBuilder):
             time_partition_interval,
             infer_filters,
             schema_name,
+            embedding_table_name,
+            id_column_name,
+            metadata_column_name,
         )
         self.service_url: str = service_url
         self.pool: Pool | None = None
@@ -202,7 +207,7 @@ class Async(QueryBuilder):
         async with await self.connect() as pool:
             return await pool.fetch(query, *params)
 
-    async def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]) -> list[Record]:
+    async def delete_by_metadata(self, filter: Filter) -> list[Record]:
         """
         Delete records by metadata filters.
         """
@@ -270,7 +275,7 @@ class Async(QueryBuilder):
         self,
         query_embedding: list[float] | None = None,
         limit: int = 10,
-        filter: Mapping[str, datetime | str] | list[dict[str, str]] | None = None,
+        filter: Filter = None,
         predicates: Predicates | None = None,
         uuid_time_filter: UUIDTimeRange | None = None,
         query_params: QueryParams | None = None,

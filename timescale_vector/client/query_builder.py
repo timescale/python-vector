@@ -1,7 +1,7 @@
 # pyright: reportPrivateUsage=false
 import json
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -10,6 +10,8 @@ import numpy as np
 from timescale_vector.client.index import BaseIndex
 from timescale_vector.client.predicates import Predicates
 from timescale_vector.client.uuid_time_range import UUIDTimeRange
+
+Filter = Mapping[str, datetime | str | int] | Sequence[Mapping[str, datetime | str | int]] | None
 
 
 class QueryBuilder:
@@ -22,6 +24,9 @@ class QueryBuilder:
         time_partition_interval: timedelta | None,
         infer_filters: bool,
         schema_name: str | None,
+        embedding_table_name: str | None = None,
+        id_column_name: str = "embedding_uuid",
+        metadata_column_name: str | None = None,  # Added this parameter
     ) -> None:
         """
         Initializes a base Vector object to generate queries for vector clients.
@@ -42,8 +47,13 @@ class QueryBuilder:
             Whether to infer start and end times from the special __start_date and __end_date filters.
         schema_name
             The schema name for the table (optional, uses the database's default schema if not specified).
+        metadata_column_name
+            The name of the metadata column (optional, if None metadata will not be queried).
         """
-        self.table_name: str = table_name
+        self.view_name: str = table_name
+        self.embedding_table_name = embedding_table_name or table_name + "_store"
+        self.id_column_name = id_column_name
+        self.metadata_column_name = metadata_column_name
         self.schema_name: str | None = schema_name
         self.num_dimensions: int = num_dimensions
         if distance_type == "cosine" or distance_type == "<=>":
@@ -79,11 +89,11 @@ class QueryBuilder:
         """
         return '"{}"'.format(ident.replace('"', '""'))
 
-    def _quoted_table_name(self) -> str:
+    def _quoted_table_name(self, table_name: str) -> str:
         if self.schema_name is not None:
-            return self._quote_ident(self.schema_name) + "." + self._quote_ident(self.table_name)
+            return self._quote_ident(self.schema_name) + "." + self._quote_ident(table_name)
         else:
-            return self._quote_ident(self.table_name)
+            return self._quote_ident(table_name)
 
     def get_row_exists_query(self) -> str:
         """
@@ -93,7 +103,7 @@ class QueryBuilder:
         -------
             str: The query to check for row existence.
         """
-        return f"SELECT 1 FROM {self._quoted_table_name()} LIMIT 1"
+        return f"SELECT 1 FROM {self._quoted_table_name(self.view_name)} LIMIT 1"
 
     def get_upsert_query(self) -> str:
         """
@@ -103,10 +113,21 @@ class QueryBuilder:
         -------
             str: The upsert query.
         """
+        if self.embedding_table_name != self.view_name:
+            # If there is a separate table for metadata (like the one created by pgai) we cannot insert it
+            return (
+                f"INSERT INTO {self._quoted_table_name(self.embedding_table_name)} "
+                f"({self._quote_ident(self.id_column_name)}, chunk, embedding) "
+                f"VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
+            )
         return (
-            f"INSERT INTO {self._quoted_table_name()} (id, metadata, contents, embedding) "
+            f"INSERT INTO {self._quoted_table_name(self.embedding_table_name)} "
+            f"({self._quote_ident(self.id_column_name)},{self.metadata_or_empty()} chunk, embedding) "
             f"VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING"
         )
+
+    def metadata_or_empty(self):
+        return f"{self._quote_ident(self.metadata_column_name)}," if self.metadata_column_name is not None else ""
 
     def get_approx_count_query(self) -> str:
         """
@@ -117,7 +138,7 @@ class QueryBuilder:
             str: the query.
         """
         # todo optimize with approx
-        return f"SELECT COUNT(*) as cnt FROM {self._quoted_table_name()}"
+        return f"SELECT COUNT(*) as cnt FROM {self._quoted_table_name(self.embedding_table_name)}"
 
     def get_create_query(self) -> str:
         """
@@ -160,8 +181,8 @@ class QueryBuilder:
                 IMMUTABLE PARALLEL SAFE
                 RETURNS NULL ON NULL INPUT;
 
-                SELECT create_hypertable('{self._quoted_table_name()}',
-                    'id',
+                SELECT create_hypertable('{self._quoted_table_name(self.embedding_table_name)}',
+                    '{self.id_column_name}',
                     if_not_exists=> true,
                     time_partitioning_func=>'public.uuid_timestamp',
                     chunk_time_interval => '{str(self.time_partition_interval.total_seconds())} seconds'::interval);
@@ -171,21 +192,22 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS vectorscale;
 
 
-CREATE TABLE IF NOT EXISTS {self._quoted_table_name()} (
-    id {self.id_type} PRIMARY KEY,
-    metadata JSONB,
-    contents TEXT,
+CREATE TABLE IF NOT EXISTS {self._quoted_table_name(self.embedding_table_name)} (
+    {self._quote_ident(self.id_column_name)} {self.id_type} PRIMARY KEY,
+    {self.metadata_column_name} JSONB,
+    chunk TEXT,
     embedding VECTOR({self.num_dimensions})
 );
 
-CREATE INDEX IF NOT EXISTS {self._quote_ident(self.table_name + "_meta_idx")} ON {self._quoted_table_name()}
-USING GIN(metadata jsonb_path_ops);
+CREATE INDEX IF NOT EXISTS {self._quote_ident(self.view_name + "_meta_idx")}
+ON {self._quoted_table_name(self.embedding_table_name)}
+USING GIN({self.metadata_column_name} jsonb_path_ops);
 
 {hypertable_sql}
 """
 
     def _get_embedding_index_name_quoted(self) -> str:
-        return self._quote_ident(self.table_name + "_embedding_idx")
+        return self._quote_ident(self.embedding_table_name + "_embedding_idx")
 
     def _get_schema_qualified_embedding_index_name_quoted(self) -> str:
         if self.schema_name is not None:
@@ -197,22 +219,31 @@ USING GIN(metadata jsonb_path_ops);
         return f"DROP INDEX IF EXISTS {self._get_schema_qualified_embedding_index_name_quoted()};"
 
     def delete_all_query(self) -> str:
-        return f"TRUNCATE {self._quoted_table_name()};"
+        return f"TRUNCATE {self._quoted_table_name(self.embedding_table_name)};"
 
     def delete_by_ids_query(self, ids: list[uuid.UUID] | list[str]) -> tuple[str, list[Any]]:
-        query = f"DELETE FROM {self._quoted_table_name()} WHERE id = ANY($1::{self.id_type}[]);"
+        query = (
+            f"DELETE FROM {self._quoted_table_name(self.embedding_table_name)} "
+            f"WHERE {self._quote_ident(self.id_column_name)} = ANY($1::{self.id_type}[]);"
+        )
         return (query, [ids])
 
-    def delete_by_metadata_query(
-        self, filter_conditions: dict[str, str] | list[dict[str, str]]
-    ) -> tuple[str, list[Any]]:
+    def delete_by_metadata_query(self, filter_conditions: Filter) -> tuple[str, list[Any]]:
         params: list[Any] = []
+        using_clause = ""
+        join_clause = ""
+        if self.embedding_table_name != self.view_name:
+            using_clause, join_clause = self._using_join_clause()
+
         (where, params) = self._where_clause_for_filter(params, filter_conditions)
-        query = f"DELETE FROM {self._quoted_table_name()} WHERE {where};"
+        query = (
+            f"DELETE FROM {self._quoted_table_name(self.embedding_table_name)} {using_clause} WHERE"
+            f" {join_clause} {where};"
+        )
         return (query, params)
 
     def drop_table_query(self) -> str:
-        return f"DROP TABLE IF EXISTS {self._quoted_table_name()};"
+        return f"DROP TABLE IF EXISTS {self._quoted_table_name(self.embedding_table_name)};"
 
     def default_max_db_connection_query(self) -> str:
         """
@@ -243,7 +274,7 @@ USING GIN(metadata jsonb_path_ops);
         column_name = "embedding"
         index_name_quoted = self._get_embedding_index_name_quoted()
         query = index.create_index_query(
-            self._quoted_table_name(),
+            self._quoted_table_name(self.embedding_table_name),
             self._quote_ident(column_name),
             index_name_quoted,
             self.distance_type,
@@ -251,21 +282,33 @@ USING GIN(metadata jsonb_path_ops);
         )
         return query
 
+    def _using_join_clause(self) -> tuple[str, str]:
+        return (
+            f"""
+        USING {self._quoted_table_name(self.view_name)}
+        """,
+            f""" {self._quoted_table_name(self.view_name)}.{self._quote_ident(self.id_column_name)} =
+        {self._quoted_table_name(self.embedding_table_name)}.{self._quote_ident(self.id_column_name)}
+        AND""",
+        )
+
     def _where_clause_for_filter(
-        self, params: list[Any], filter: Mapping[str, datetime | str] | list[dict[str, str]] | None
+        self,
+        params: list[Any],
+        filter: Filter = None,
     ) -> tuple[str, list[Any]]:
         if filter is None:
             return "TRUE", params
 
         if isinstance(filter, dict):
-            where = f"metadata @> ${len(params)+1}"
+            where = f"{self.metadata_column_name} @> ${len(params)+1}"
             json_object = json.dumps(filter)
             params = params + [json_object]
         elif isinstance(filter, list):
             any_params: list[str] = []
             for _idx, filter_dict in enumerate(filter, start=len(params) + 1):
                 any_params.append(json.dumps(filter_dict))
-            where = f"metadata @> ANY(${len(params) + 1}::jsonb[])"
+            where = f"{self.metadata_column_name} @> ANY(${len(params) + 1}::jsonb[])"
             params = params + [any_params]
         else:
             raise ValueError(f"Unknown filter type: {type(filter)}")
@@ -276,7 +319,7 @@ USING GIN(metadata jsonb_path_ops);
         self,
         query_embedding: list[float] | np.ndarray[Any, Any] | None,
         limit: int = 10,
-        filter: Mapping[str, datetime | str] | list[dict[str, str]] | None = None,
+        filter: Filter = None,
         predicates: Predicates | None = None,
         uuid_time_filter: UUIDTimeRange | None = None,
     ) -> tuple[str, list[Any]]:
@@ -288,7 +331,7 @@ USING GIN(metadata jsonb_path_ops);
         """
         params: list[Any] = []
         if query_embedding is not None:
-            distance = f"embedding {self.distance_type} ${len(params)+1}"
+            distance = f"embedding {self.distance_type} ${len(params) + 1}"
             params = params + [query_embedding]
             order_by_clause = f"ORDER BY {distance} ASC"
         else:
@@ -312,11 +355,11 @@ USING GIN(metadata jsonb_path_ops);
                 del filter["__end_date"]
 
         where_clauses: list[str] = []
-        if filter is not None:
+        if filter is not None and self.metadata_column_name is not None:
             (where_filter, params) = self._where_clause_for_filter(params, filter)
             where_clauses.append(where_filter)
 
-        if predicates is not None:
+        if predicates is not None and self.metadata_column_name is not None:
             (where_predicates, params) = predicates.build_query(params)
             where_clauses.append(where_predicates)
 
@@ -328,9 +371,13 @@ USING GIN(metadata jsonb_path_ops);
 
         query = f"""
         SELECT
-            id, metadata, contents, embedding, {distance} as distance
+            {self._quote_ident(self.id_column_name)},
+            {self.metadata_or_empty()}
+            chunk,
+            embedding,
+            {distance} as distance
         FROM
-           {self._quoted_table_name()}
+           {self._quoted_table_name(self.view_name)}
         WHERE
            {where}
         {order_by_clause}

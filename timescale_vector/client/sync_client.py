@@ -1,9 +1,9 @@
 import json
 import re
 import uuid
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Literal
 
 import numpy as np
@@ -11,12 +11,12 @@ from numpy import ndarray
 from pgvector.psycopg2 import register_vector  # type: ignore
 from psycopg2 import connect
 from psycopg2.extensions import connection as PSYConnection
-from psycopg2.extras import DictCursor, register_uuid
+from psycopg2.extras import DictCursor, RealDictRow, register_uuid
 from psycopg2.pool import SimpleConnectionPool
 
 from timescale_vector.client.index import BaseIndex, QueryParams
 from timescale_vector.client.predicates import Predicates
-from timescale_vector.client.query_builder import QueryBuilder
+from timescale_vector.client.query_builder import Filter, QueryBuilder
 from timescale_vector.client.uuid_time_range import UUIDTimeRange
 
 
@@ -34,6 +34,9 @@ class Sync:
         max_db_connections: int | None = None,
         infer_filters: bool = True,
         schema_name: str | None = None,
+        embedding_table_name: str | None = None,
+        id_column_name: str = "embedding_uuid",
+        metadata_column_name: str | None = None,
     ) -> None:
         """
         Initializes a sync client for storing vector data.
@@ -65,6 +68,9 @@ class Sync:
             time_partition_interval,
             infer_filters,
             schema_name,
+            embedding_table_name,
+            id_column_name,
+            metadata_column_name,
         )
         self.service_url: str = service_url
         self.pool: SimpleConnectionPool | None = None
@@ -236,7 +242,7 @@ class Sync:
         with self.connect() as conn, conn.cursor() as cur:
             cur.execute(translated_query, translated_params)
 
-    def delete_by_metadata(self, filter: dict[str, str] | list[dict[str, str]]) -> None:
+    def delete_by_metadata(self, filter: Filter) -> None:
         """
         Delete records by metadata filters.
         """
@@ -304,11 +310,11 @@ class Sync:
         self,
         query_embedding: ndarray[Any, Any] | list[float] | None = None,
         limit: int = 10,
-        filter: Mapping[str, datetime | str] | list[dict[str, str]] | None = None,
+        filter: Filter = None,
         predicates: Predicates | None = None,
         uuid_time_filter: UUIDTimeRange | None = None,
         query_params: QueryParams | None = None,
-    ) -> list[tuple[Any, ...]]:
+    ) -> list[RealDictRow]:
         """
         Retrieves similar records using a similarity query.
 

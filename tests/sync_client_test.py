@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from timescale_vector.client import (
-    SEARCH_RESULT_CONTENTS_IDX,
+    SEARCH_RESULT_CHUNK_IDX,
     SEARCH_RESULT_DISTANCE_IDX,
     SEARCH_RESULT_ID_IDX,
     SEARCH_RESULT_METADATA_IDX,
@@ -22,7 +22,16 @@ from timescale_vector.client import (
 
 @pytest.mark.parametrize("schema", ["temp", None])
 def test_sync_client(service_url: str, schema: str) -> None:
-    vec = Sync(service_url, "data_table", 2, schema_name=schema)
+    vec = Sync(
+        service_url,
+        "data_table",
+        2,
+        schema_name=schema,
+        embedding_table_name="data_table",
+        id_column_name="id",
+        metadata_column_name="metadata",
+    )
+    vec.drop_table()
     vec.create_tables()
     empty = vec.table_is_empty()
 
@@ -135,16 +144,16 @@ def test_sync_client(service_url: str, schema: str) -> None:
     assert raised
 
     rec = vec.search([1.0, 2.0], filter={"key_1": "val_1", "key_2": "val_2"})
-    assert rec[0][SEARCH_RESULT_CONTENTS_IDX] == "the brown fox"
-    assert rec[0]["contents"] == "the brown fox"  # type: ignore
+    assert rec[0][SEARCH_RESULT_CHUNK_IDX] == "the brown fox"
+    assert rec[0]["chunk"] == "the brown fox"
     assert rec[0][SEARCH_RESULT_METADATA_IDX] == {
         "key_1": "val_1",
         "key_2": "val_2",
     }
-    assert rec[0]["metadata"] == {"key_1": "val_1", "key_2": "val_2"}  # type: ignore
+    assert rec[0]["metadata"] == {"key_1": "val_1", "key_2": "val_2"}
     assert isinstance(rec[0][SEARCH_RESULT_METADATA_IDX], dict)
     assert rec[0][SEARCH_RESULT_DISTANCE_IDX] == 0.0009438353921149556
-    assert rec[0]["distance"] == 0.0009438353921149556  # type: ignore
+    assert rec[0]["distance"] == 0.0009438353921149556
 
     rec = vec.search([1.0, 2.0], limit=4, predicates=Predicates("key", "==", "val2"))
     assert len(rec) == 1
@@ -170,7 +179,16 @@ def test_sync_client(service_url: str, schema: str) -> None:
     vec.drop_table()
     vec.close()
 
-    vec = Sync(service_url, "data_table", 2, id_type="TEXT", schema_name=schema)
+    vec = Sync(
+        service_url,
+        "data_table",
+        2,
+        id_type="TEXT",
+        schema_name=schema,
+        embedding_table_name="data_table",
+        id_column_name="id",
+        metadata_column_name="metadata",
+    )
     vec.create_tables()
     assert vec.table_is_empty()
     vec.upsert([("Not a valid UUID", {"key": "val"}, "the brown fox", [1.0, 1.2])])
@@ -186,6 +204,9 @@ def test_sync_client(service_url: str, schema: str) -> None:
         2,
         time_partition_interval=timedelta(seconds=60),
         schema_name=schema,
+        embedding_table_name="data_table",
+        id_column_name="id",
+        metadata_column_name="metadata",
     )
     vec.create_tables()
     assert vec.table_is_empty()
