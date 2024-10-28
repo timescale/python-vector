@@ -3,7 +3,8 @@ from typing import Any
 
 import vcr
 
-vcr_cassette_path = os.path.join(os.path.dirname(__file__), "vcr_cassettes")
+test_file_path = os.path.dirname(__file__)
+vcr_cassette_path = os.path.join(test_file_path, "vcr_cassettes")
 
 
 def remove_set_cookie_header(response: dict[str, Any]):

@@ -19,7 +19,9 @@ from timescale_vector.client import (
 @pytest.mark.asyncio
 @pytest.mark.parametrize("schema", ["temp", None])
 async def test_vector(service_url: str, schema: str) -> None:
-    vec = Async(service_url, "data_table", 2, schema_name=schema)
+    vec = Async(
+        service_url, "data_table", 2, schema_name=schema, embedding_table_name="data_table", id_column_name="id"
+    )
     await vec.drop_table()
     await vec.create_tables()
     empty = await vec.table_is_empty()
@@ -118,7 +120,7 @@ async def test_vector(service_url: str, schema: str) -> None:
 
     assert isinstance(rec[0][SEARCH_RESULT_METADATA_IDX], dict)
     assert isinstance(rec[0]["metadata"], dict)
-    assert rec[0]["contents"] == "the brown fox"
+    assert rec[0]["chunk"] == "the brown fox"
 
     rec = await vec.search([1.0, 2.0], limit=4, predicates=Predicates(("key", "val2")))
     assert len(rec) == 1
@@ -256,7 +258,7 @@ async def test_vector(service_url: str, schema: str) -> None:
     await vec.drop_table()
     await vec.close()
 
-    vec = Async(service_url, "data_table", 2, id_type="TEXT")
+    vec = Async(service_url, "data_table", 2, id_type="TEXT", embedding_table_name="data_table", id_column_name="id")
     await vec.create_tables()
     empty = await vec.table_is_empty()
     assert empty
@@ -269,7 +271,14 @@ async def test_vector(service_url: str, schema: str) -> None:
     await vec.drop_table()
     await vec.close()
 
-    vec = Async(service_url, "data_table", 2, time_partition_interval=timedelta(seconds=60))
+    vec = Async(
+        service_url,
+        "data_table",
+        2,
+        time_partition_interval=timedelta(seconds=60),
+        embedding_table_name="data_table",
+        id_column_name="id",
+    )
     await vec.create_tables()
     empty = await vec.table_is_empty()
     assert empty
