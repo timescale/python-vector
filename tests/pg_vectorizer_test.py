@@ -1,22 +1,23 @@
 from datetime import timedelta
+from typing import Any
 
 import psycopg2
-import pytest
 from langchain.docstore.document import Document
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores.timescalevector import TimescaleVector
 from langchain_openai import OpenAIEmbeddings
 
+from tests.utils import http_recorder
 from timescale_vector import client
 from timescale_vector.pgvectorizer import Vectorize
 
 
-def get_document(blog):
+def get_document(blog: dict[str, Any]) -> list[Document]:
     text_splitter = CharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
     )
-    docs = []
+    docs: list[Document] = []
     for chunk in text_splitter.split_text(blog["contents"]):
         content = f"Author {blog['author']}, title: {blog['title']}, contents:{chunk}"
         metadata = {
@@ -30,7 +31,7 @@ def get_document(blog):
     return docs
 
 
-@pytest.mark.skip(reason="requires OpenAI API key")
+@http_recorder.use_cassette("pg_vectorizer.yaml")
 def test_pg_vectorizer(service_url: str) -> None:
     with psycopg2.connect(service_url) as conn, conn.cursor() as cursor:
         for item in ["blog", "blog_embedding_work_queue", "blog_embedding"]:
@@ -56,7 +57,7 @@ def test_pg_vectorizer(service_url: str) -> None:
             VALUES ('first', 'mat', 'first_post', 'personal', '2021-01-01');
         """)
 
-    def embed_and_write(blog_instances, vectorizer):
+    def embed_and_write(blog_instances: list[Any], vectorizer: Vectorize) -> None:
         TABLE_NAME = vectorizer.table_name_unquoted + "_embedding"
         embedding = OpenAIEmbeddings()
         vector_store = TimescaleVector(
@@ -70,7 +71,7 @@ def test_pg_vectorizer(service_url: str) -> None:
         metadata_for_delete = [{"blog_id": blog["locked_id"]} for blog in blog_instances]
         vector_store.delete_by_metadata(metadata_for_delete)
 
-        documents = []
+        documents: list[Document] = []
         for blog in blog_instances:
             # skip blogs that are not published yet, or are deleted (will be None because of left join)
             if blog["published_time"] is not None:

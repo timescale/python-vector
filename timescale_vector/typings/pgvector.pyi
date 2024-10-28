@@ -1,0 +1,3 @@
+from typing import Any
+
+def register_vector(conn_or_curs: Any) -> None: ...

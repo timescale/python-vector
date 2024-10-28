@@ -20,7 +20,7 @@ from timescale_vector.client import (
 )
 
 
-@pytest.mark.parametrize("schema", ["tschema", None])
+@pytest.mark.parametrize("schema", ["temp", None])
 def test_sync_client(service_url: str, schema: str) -> None:
     vec = Sync(service_url, "data_table", 2, schema_name=schema)
     vec.create_tables()
@@ -136,15 +136,15 @@ def test_sync_client(service_url: str, schema: str) -> None:
 
     rec = vec.search([1.0, 2.0], filter={"key_1": "val_1", "key_2": "val_2"})
     assert rec[0][SEARCH_RESULT_CONTENTS_IDX] == "the brown fox"
-    assert rec[0]["contents"] == "the brown fox"
+    assert rec[0]["contents"] == "the brown fox"  # type: ignore
     assert rec[0][SEARCH_RESULT_METADATA_IDX] == {
         "key_1": "val_1",
         "key_2": "val_2",
     }
-    assert rec[0]["metadata"] == {"key_1": "val_1", "key_2": "val_2"}
+    assert rec[0]["metadata"] == {"key_1": "val_1", "key_2": "val_2"}  # type: ignore
     assert isinstance(rec[0][SEARCH_RESULT_METADATA_IDX], dict)
     assert rec[0][SEARCH_RESULT_DISTANCE_IDX] == 0.0009438353921149556
-    assert rec[0]["distance"] == 0.0009438353921149556
+    assert rec[0]["distance"] == 0.0009438353921149556  # type: ignore
 
     rec = vec.search([1.0, 2.0], limit=4, predicates=Predicates("key", "==", "val2"))
     assert len(rec) == 1
@@ -218,7 +218,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         ]
     )
 
-    def search_date(start_date, end_date, expected):
+    def search_date(start_date: datetime | str | None, end_date: datetime | str | None, expected: int) -> None:
         # using uuid_time_filter
         rec = vec.search(
             [1.0, 2.0],
@@ -234,7 +234,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         assert len(rec) == expected
 
         # using filters
-        filter = {}
+        filter: dict[str, str | datetime] = {}
         if start_date is not None:
             filter["__start_date"] = start_date
         if end_date is not None:
@@ -250,7 +250,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         rec = vec.search([1.0, 2.0], limit=4, filter=filter)
         assert len(rec) == expected
         # using predicates
-        predicates = []
+        predicates: list[tuple[str, str, str | datetime]] = []
         if start_date is not None:
             predicates.append(("__uuid_timestamp", ">=", start_date))
         if end_date is not None:
