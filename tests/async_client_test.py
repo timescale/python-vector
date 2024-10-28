@@ -20,7 +20,13 @@ from timescale_vector.client import (
 @pytest.mark.parametrize("schema", ["temp", None])
 async def test_vector(service_url: str, schema: str) -> None:
     vec = Async(
-        service_url, "data_table", 2, schema_name=schema, embedding_table_name="data_table", id_column_name="id"
+        service_url,
+        "data_table",
+        2,
+        schema_name=schema,
+        embedding_table_name="data_table",
+        id_column_name="id",
+        metadata_column_name="metadata",
     )
     await vec.drop_table()
     await vec.create_tables()
@@ -258,7 +264,15 @@ async def test_vector(service_url: str, schema: str) -> None:
     await vec.drop_table()
     await vec.close()
 
-    vec = Async(service_url, "data_table", 2, id_type="TEXT", embedding_table_name="data_table", id_column_name="id")
+    vec = Async(
+        service_url,
+        "data_table",
+        2,
+        id_type="TEXT",
+        embedding_table_name="data_table",
+        id_column_name="id",
+        metadata_column_name="metadata",
+    )
     await vec.create_tables()
     empty = await vec.table_is_empty()
     assert empty
@@ -278,6 +292,7 @@ async def test_vector(service_url: str, schema: str) -> None:
         time_partition_interval=timedelta(seconds=60),
         embedding_table_name="data_table",
         id_column_name="id",
+        metadata_column_name="metadata",
     )
     await vec.create_tables()
     empty = await vec.table_is_empty()

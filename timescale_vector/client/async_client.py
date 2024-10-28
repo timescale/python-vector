@@ -27,6 +27,7 @@ class Async(QueryBuilder):
         schema_name: str | None = None,
         embedding_table_name: str | None = None,
         id_column_name: str = "embedding_uuid",
+        metadata_column_name: str | None = None,
     ) -> None:
         """
         Initializes a async client for storing vector data.
@@ -60,6 +61,7 @@ class Async(QueryBuilder):
             schema_name,
             embedding_table_name,
             id_column_name,
+            metadata_column_name,
         )
         self.service_url: str = service_url
         self.pool: Pool | None = None

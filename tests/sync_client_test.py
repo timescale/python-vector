@@ -22,7 +22,15 @@ from timescale_vector.client import (
 
 @pytest.mark.parametrize("schema", ["temp", None])
 def test_sync_client(service_url: str, schema: str) -> None:
-    vec = Sync(service_url, "data_table", 2, schema_name=schema, embedding_table_name="data_table", id_column_name="id")
+    vec = Sync(
+        service_url,
+        "data_table",
+        2,
+        schema_name=schema,
+        embedding_table_name="data_table",
+        id_column_name="id",
+        metadata_column_name="metadata",
+    )
     vec.drop_table()
     vec.create_tables()
     empty = vec.table_is_empty()
@@ -179,6 +187,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         schema_name=schema,
         embedding_table_name="data_table",
         id_column_name="id",
+        metadata_column_name="metadata",
     )
     vec.create_tables()
     assert vec.table_is_empty()
@@ -197,6 +206,7 @@ def test_sync_client(service_url: str, schema: str) -> None:
         schema_name=schema,
         embedding_table_name="data_table",
         id_column_name="id",
+        metadata_column_name="metadata",
     )
     vec.create_tables()
     assert vec.table_is_empty()

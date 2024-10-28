@@ -126,7 +126,7 @@ def test_metadata_filtered_search(quickstart: None, service_url: str):  # noqa: 
 
 @pytest.fixture(scope="function")
 def sync_client(service_url: str) -> client.Sync:
-    return client.Sync(service_url, "blog_contents_embeddings", 768)
+    return client.Sync(service_url, "blog_contents_embeddings", 768, metadata_column_name="metadata")
 
 
 def test_basic_similarity_search(sync_client: client.Sync, quickstart: None):  # noqa: ARG001
@@ -244,3 +244,57 @@ def test_index_operations(sync_client: client.Sync, quickstart: None):  # noqa: 
     assert len(results_with_params) == 3
 
     sync_client.drop_embedding_index()
+
+
+def test_semantic_search_without_metadata(service_url: str, quickstart: None):  # noqa: ARG001
+    conn = psycopg2.connect(service_url)
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+    with conn.cursor() as cursor:
+        cursor.execute("DROP VIEW IF EXISTS public.blog_contents_embeddings;")
+        cursor.execute("""
+            CREATE VIEW public.blog_contents_embeddings AS
+            SELECT
+                t.embedding_uuid,
+                t.chunk_seq,
+                t.chunk,
+                t.embedding,
+                t.id,
+                s.title,
+                s.authors,
+                s.contents
+            FROM (public.blog_contents_embeddings_store t
+                LEFT JOIN public.blog s ON ((t.id = s.id)));
+        """)
+
+    sync_client = client.Sync(service_url, "blog_contents_embeddings", 768)
+    results = sync_client.search(embeddings["artificial intelligence"], limit=3)
+
+    assert len(results) == 3
+    assert all(isinstance(r["embedding_uuid"], uuid.UUID) for r in results)
+    assert all(isinstance(r["chunk"], str) for r in results)
+    assert all(isinstance(r["embedding"], numpy.ndarray) for r in results)
+    assert all(isinstance(r["distance"], float) for r in results)
+
+    assert all("metadata" not in r or not r["metadata"] for r in results)
+
+    # Restore the original view
+    with conn.cursor() as cursor:
+        cursor.execute("DROP VIEW IF EXISTS public.blog_contents_embeddings;")
+        cursor.execute("""
+            CREATE VIEW public.blog_contents_embeddings AS
+            SELECT
+                t.embedding_uuid,
+                t.chunk_seq,
+                t.chunk,
+                t.embedding,
+                t.id,
+                s.title,
+                s.authors,
+                s.contents,
+                s.metadata
+            FROM (public.blog_contents_embeddings_store t
+                LEFT JOIN public.blog s ON ((t.id = s.id)));
+        """)
+
+    conn.close()
